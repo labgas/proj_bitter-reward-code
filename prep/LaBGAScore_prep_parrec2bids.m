@@ -400,7 +400,7 @@ for sub = 1:size(sourcesubjdirs,1)
                     movefile(fullfile(subjBIDSsessdir,sourcetask2jsonname),fullfile(subjBIDSsessdir,'func',BIDStask2jsonname));
                 end
                 
-                movefile(fullfile(subjBIDSsessdir,'dcmHeaders.mat'), fullfile(subjsourcesessdir,'dcmHeaders.mat')); % move to sourcedata to prevent BIDS validator from erroring
+%                 movefile(fullfile(subjBIDSsessdir,'dcmHeaders.mat'), fullfile(subjsourcesessdir,'dcmHeaders.mat')); % move to sourcedata to prevent BIDS validator from erroring
             
         end % for loop over sessions
         
