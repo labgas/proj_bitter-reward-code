@@ -1,4 +1,4 @@
-%% LaBGAScore_prep_s1_write_events_tsv
+%% bit_rew_prep_s1_write_events_tsv
 %
 % This script reads logfiles, extracts the onsets, durations, and ratings for
 % different conditions, and writes events.tsv files to the BIDS dir for
@@ -47,7 +47,7 @@
 %% DEFINE DIRECTORIES, SUBJECTS, RUNS, CONDITIONS, AND IMPORT OPTIONS
 %--------------------------------------------------------------------------
 
-LaBGAScore_prep_s0_define_directories; % lukasvo edited from original LaBGAScore script to enable standalone functioning of proj_ery_4a dataset
+bit_rew_prep_s0_define_directories; % lukasvo edited from original LaBGAScore script to enable standalone functioning of proj_ery_4a dataset
 
 subjs2write = {}; % enter subjects separated by comma if you only want to write files for selected subjects e.g. {'sub-01','sub-02'}
 pheno_tsv = true; % turn to false if you do not wish to generate a phenotype.tsv file with trial-by-trial ratings; will only work if subjs2write is empty (i.e. when you loop over all your subjects)
@@ -84,7 +84,7 @@ if ~isempty(subjs2write)
     [C,ia,~] = intersect(sourcesubjs,subjs2write);
     
     if ~isequal(C',subjs2write)
-        error('\nsubject %s present in subjs2smooth not present in %s, please check before proceeding',subjs2smooth{~ismember(subjs2smooth,C)},derivdir);
+        error('\nsubject %s present in subjs2write not present in %s, please check before proceeding',subjs2swrite{~ismember(subjs2swrite,C)},derivdir);
     
     else
         
