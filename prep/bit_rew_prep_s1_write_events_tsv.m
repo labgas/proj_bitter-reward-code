@@ -53,29 +53,29 @@ subjs2write = {}; % enter subjects separated by comma if you only want to write 
 pheno_tsv = true; % turn to false if you do not wish to generate a phenotype.tsv file with trial-by-trial ratings; will only work if subjs2write is empty (i.e. when you loop over all your subjects)
 pheno_name = 'ratings_online.tsv';
 
-runnames = {'run-1','run-2','run-3','run-4','run-5','run-6'};
-logfilenames = {'*_run1.log','*_run2.log','*_run3.log','*_run4.log','*_run5.log','*_run6.log'};
-taskname = 'sweettaste_';
-sweet_labels = {'sucrose delivery';'erythritol delivery';'sucralose delivery';'control delivery'}; % labels for sweet substance delivery in Code var of logfile
-swallow_rinse_labels = {'sucrose_swallowing';'erythritol_swallowing';'sucralose_swallowing';'control_swallowing'}; % labels for swallowing cue presentation after sweet substance delivery in Code var of logfile
-rating_labels = {'Sucrose','Erythritol','Sucralose','Control'}; % labels for start of rating period in Code var of logfile
-fixation_labels = {'fixation_cross','Sucrose fixation cross','Erythritol fixation cross','Sucralose fixation cross','Control fixation cross'}; % labels for fixation cross in Code var of logfile
-events_interest = {'sucrose','erythritol','sucralose','water'}; % names of events of interest to be written to events.tsv
-events_nuisance = {'swallow_rinse','rating'}; % names of nuisance events to be written to events.tsv
-
-varNames = {'Trial','Event Type','Code','Time','TTime','Uncertainty','Duration','Uncertainty','ReqTime','ReqDur','Stim Type','Pair Index'}; % varnames of logfile
-selectedVarNames = [1:5 7 9]; % varnames we want to use in the script
-varTypes = {'double','categorical','categorical','double','double','double','double','double','double','char','char','double'}; % matlab vartypes to be used when importing log file as table
-delimiter = '\t';
-dataStartLine = 5; % line on which actual data starts in logfile
-extraColRule = 'ignore';
-
-opts = delimitedTextImportOptions('VariableNames',varNames,...
-                                'SelectedVariableNames',selectedVarNames,...
-                                'VariableTypes',varTypes,...
-                                'Delimiter',delimiter,...
-                                'DataLines', dataStartLine,...
-                                'ExtraColumnsRule',extraColRule); 
+% runnames = {'run-1','run-2','run-3','run-4','run-5','run-6'};
+% logfilenames = {'*_run1.log','*_run2.log','*_run3.log','*_run4.log','*_run5.log','*_run6.log'};
+% taskname = 'sweettaste_';
+% sweet_labels = {'sucrose delivery';'erythritol delivery';'sucralose delivery';'control delivery'}; % labels for sweet substance delivery in Code var of logfile
+% swallow_rinse_labels = {'sucrose_swallowing';'erythritol_swallowing';'sucralose_swallowing';'control_swallowing'}; % labels for swallowing cue presentation after sweet substance delivery in Code var of logfile
+% rating_labels = {'Sucrose','Erythritol','Sucralose','Control'}; % labels for start of rating period in Code var of logfile
+% fixation_labels = {'fixation_cross','Sucrose fixation cross','Erythritol fixation cross','Sucralose fixation cross','Control fixation cross'}; % labels for fixation cross in Code var of logfile
+% events_interest = {'sucrose','erythritol','sucralose','water'}; % names of events of interest to be written to events.tsv
+% events_nuisance = {'swallow_rinse','rating'}; % names of nuisance events to be written to events.tsv
+% 
+% varNames = {'Trial','Event Type','Code','Time','TTime','Uncertainty','Duration','Uncertainty','ReqTime','ReqDur','Stim Type','Pair Index'}; % varnames of logfile
+% selectedVarNames = [1:5 7 9]; % varnames we want to use in the script
+% varTypes = {'double','categorical','categorical','double','double','double','double','double','double','char','char','double'}; % matlab vartypes to be used when importing log file as table
+% delimiter = '\t';
+% dataStartLine = 5; % line on which actual data starts in logfile
+% extraColRule = 'ignore';
+% 
+% opts = delimitedTextImportOptions('VariableNames',varNames,...
+%                                 'SelectedVariableNames',selectedVarNames,...
+%                                 'VariableTypes',varTypes,...
+%                                 'Delimiter',delimiter,...
+%                                 'DataLines', dataStartLine,...
+%                                 'ExtraColumnsRule',extraColRule); 
 
 
 %% LOOP OVER SUBJECTS TO READ LOGFILES, CREATE TABLE WITH ONSETS AND DURATIONS, AND SAVE AS EVENTS.TSV TO BIDSSUBJDIRS
