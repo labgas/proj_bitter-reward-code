@@ -67,19 +67,19 @@ taskname2 = 'FID_';
 % events_interest = {'sucrose','erythritol','sucralose','water'}; % names of events of interest to be written to events.tsv
 % events_nuisance = {'swallow_rinse','rating'}; % names of nuisance events to be written to events.tsv
 % 
-varNames = {'version','timestamp','block number','trial number','lost msec','free VRAM','Conditie','time_start','time_end','trial contents'}; % varnames of logfile
-selectedVarNames = [8:10]; % varnames we want to use in the script
-varTypes = {'char','char','char','char','char','char','char','double','double','char'}; % matlab vartypes to be used when importing log file as table
-delimiter = '\t';
-dataStartLine = 2; % line on which actual data starts in logfile
-extraColRule = 'ignore';
-
-opts = delimitedTextImportOptions('VariableNames',varNames,...
-                                'SelectedVariableNames',selectedVarNames,...
-                                'VariableTypes',varTypes,...
-                                'Delimiter',delimiter,...
-                                'DataLines', dataStartLine,...
-                                'ExtraColumnsRule',extraColRule); 
+% varNames = {'Trial','Event Type','Code','Time','TTime','Uncertainty','Duration','Uncertainty','ReqTime','ReqDur','Stim Type','Pair Index'}; % varnames of logfile
+% selectedVarNames = [1:5 7 9]; % varnames we want to use in the script
+% varTypes = {'double','categorical','categorical','double','double','double','double','double','double','char','char','double'}; % matlab vartypes to be used when importing log file as table
+% delimiter = '\t';
+% dataStartLine = 5; % line on which actual data starts in logfile
+% extraColRule = 'ignore';
+% 
+% opts = delimitedTextImportOptions('VariableNames',varNames,...
+%                                 'SelectedVariableNames',selectedVarNames,...
+%                                 'VariableTypes',varTypes,...
+%                                 'Delimiter',delimiter,...
+%                                 'DataLines', dataStartLine,...
+%                                 'ExtraColumnsRule',extraColRule); 
 
 template_log1 = '_photo_results.txt';
 template_log2 = '-FID_1_final*.log';
@@ -167,89 +167,19 @@ if ~isempty(subjs2write)
                         
                         if run < 3
                             
-                            fid = fopen(logfilepath,'r');
-                            datafile = textscan(fid,'%s %s %s %s %s %s %s %s %s %s %*[^\n]','delimiter','\t');
-                            fclose(fid);
+                            fid = fopen(logfilename
                             
-                           % first row of datafile is a header and should be neglected
-                           % column 8 of datafile is the start time in ms since start of fMRI scan
-                           % column 9 of datafile is the end time in ms since start of fMRI scan
-                           % column 10 of datafile is the image
-                           tmp8 = datafile{8};
-                           tmp8 = tmp8(2:end);
-                           % make tmp8 an array of onsets
-                           onsets = zeros(length(tmp8),1);
-                           for i = 1:length(tmp8)
-                               onsets(i) = str2num(tmp8{i});
-                           end
-                           tmp10 = datafile{10};
-                           tmp10 = tmp10(2:end); % this is the list of images
-                           index_LC     = [];
-                           index_HC     = [];
-                           index_NF     = [];
-                           index_rest   = [];
-                           index_rating = [];
-                           for i = 1:length(tmp10)
-                               if strfind(tmp10{i},'Low') == 1
-                                  index_LC = [index_LC i];
-                               elseif strfind(tmp10{i},'High') == 1
-                                  index_HC = [index_HC i];
-                               elseif strfind(tmp10{i},'Neutral') == 1
-                                  index_NF = [index_NF i];
-                               elseif strfind(tmp10{i},'flow') == 1
-                                  index_rest = [index_rest i];
-                               end
-                           end
-                           % since 8 images were shown, the index_LC, index_HC and index_NF
-                           % contain always blocks of 8 subsequent images. We only need the
-                           % onset of the block of images.
-                           onsets_blocks{1} = onsets(index_rest)/1000; % in seconds
-                           onsets_blocks{2} = onsets(index_HC(1:8:end))/1000; % in seconds
-                           onsets_blocks{3} = onsets(index_LC(1:8:end))/1000; % in seconds
-                           onsets_blocks{4} = onsets(index_NF(1:8:end))/1000; % in seconds
-                           tmp1 = onsets(index_HC(8:8:end))/1000 + 3; % onset of the rating block after HC
-                           tmp1_durations = 12*ones(length(tmp1),1);
-                           tmp2 = onsets(index_LC(8:8:end))/1000 + 3; % onset of the rating block after LC 
-                           tmp2_durations = 12*ones(length(tmp2),1);
-                           tmp3 = onsets(index_NF(8:8:end))/1000 + 3; % onset of the rating block after NF
-                           tmp3_durations = 6*ones(length(tmp3),1);
-                           tmp = [tmp1; tmp2; tmp3];
-                           tmp_durations = [tmp1_durations; tmp2_durations; tmp3_durations];
-                           [onsets_blocks{5},listorder] = sort(tmp,'ascend');
-                           durations{1} = 24; % rest period of 24s
-                           durations{2} = 24; % 8 HC images x 3s
-                           durations{3} = 24; % 8 LC images x 3s
-                           durations{4} = 24; % 8 NF images x 3s        
-                           durations{5} = tmp_durations(listorder);
                             
                             
                             log = readtable(logfilepath,opts);
-                            
-                            index_LC     = [];
-                            index_HC     = [];
-                            index_NF     = [];
-                            index_rest   = [];
-                            index_rating = [];
-                           for i = 1:length(log.trialContents)
-                               if strfind(tmp10{i},'Low') == 1
-                                  index_LC = [index_LC i];
-                               elseif strfind(tmp10{i},'High') == 1
-                                  index_HC = [index_HC i];
-                               elseif strfind(tmp10{i},'Neutral') == 1
-                                  index_NF = [index_NF i];
-                               elseif strfind(tmp10{i},'flow') == 1
-                                  index_rest = [index_rest i];
-                               end
-                           end
-                            
-%                             log = log(~isnan(log.Trial),:);
-%                             time_zero = log.Time(log.Trial == 0 & log.EventType == 'Pulse'); % time for onsets and durations is counted from the first scanner pulse onwards
-% 
-%                                 if size(time_zero,1) > 1
-%                                     error('\nambiguity about time zero in %s%s, please check logfile',subjs{sub},logfilenames{run});
-%                                 end
-% 
-%                             log.TimeZero = log.Time - time_zero;
+                            log = log(~isnan(log.Trial),:);
+                            time_zero = log.Time(log.Trial == 0 & log.EventType == 'Pulse'); % time for onsets and durations is counted from the first scanner pulse onwards
+
+                                if size(time_zero,1) > 1
+                                    error('\nambiguity about time zero in %s%s, please check logfile',subjs{sub},logfilenames{run});
+                                end
+
+                            log.TimeZero = log.Time - time_zero;
                             log.onset = log.TimeZero ./ 10000; % convert to seconds
                             log(log.EventType == 'Pulse',:) = [];
                             log.trial_type = cell(height(log),1);
