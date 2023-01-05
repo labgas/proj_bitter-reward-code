@@ -42,6 +42,9 @@
 %__________________________________________________________________________
 % @(#)% LaBGAScore_prep_s1_write_events_tsv.m         v1.2        
 % last modified: 2022/04/21
+%
+% adapted from LCN12_JULIE_first_level_analysis script by Patrick Dupont
+%
 
 
 %% DEFINE DIRECTORIES, SUBJECTS, RUNS, CONDITIONS, AND IMPORT OPTIONS
@@ -53,7 +56,7 @@ subjs2write = {}; % enter subjects separated by comma if you only want to write 
 pheno_tsv = true; % turn to false if you do not wish to generate a phenotype.tsv file with trial-by-trial ratings; will only work if subjs2write is empty (i.e. when you loop over all your subjects)
 pheno_name = 'ratings_online.tsv';
 
-% runnames = {'run-1','run-2','run-3','run-4','run-5','run-6'};
+runnames = {'run-1','run-2','run-3','run-4'};
 % logfilenames = {'*_run1.log','*_run2.log','*_run3.log','*_run4.log','*_run5.log','*_run6.log'};
 % taskname = 'sweettaste_';
 % sweet_labels = {'sucrose delivery';'erythritol delivery';'sucralose delivery';'control delivery'}; % labels for sweet substance delivery in Code var of logfile
@@ -77,6 +80,44 @@ pheno_name = 'ratings_online.tsv';
 %                                 'DataLines', dataStartLine,...
 %                                 'ExtraColumnsRule',extraColRule); 
 
+template_log1 = '_photo_results.txt';
+template_log2 = '-FID_1_final*.log';
+template_rating = '_ratings_results.txt';
+
+nr_runs = 4;
+nr_volumes1 = 216; % for run1 and run2
+nr_volumes2 = 228; % for run3 and run4
+
+TR = 2.5; % in seconds
+
+% conditions run1 and run2
+conditions_name12 = {
+    'rest'
+    'HC'
+    'LC'
+    'NF'
+    'rating'
+    };
+% conditions run3 and run4
+conditions_name34 = {
+    'cue C0'
+    'cue C2'
+    'cue C10'
+    'feedback_C10_win'
+    'feedback_C10_nowin'
+    'feedback_C2_win'
+    'feedback_C2_nowin'
+    'feedback_C0'
+};
+
+% 1 = feedback_C10_win, 2 = feedback_C10_nowin, 3 = feedback_C2_win
+% 4 = feedback_C2_nowin, 5 = feedback_C0
+order_trials = [5 4 3 3 1 4 1 5 2 5 ...
+                3 3 1 3 2 5 3 2 5 1 ... 
+                3 3 1 4 4 5 3 1 3 5 ...
+                4 1 5 4 3 5 5 1 1 2 ...
+                1 5 2 5 3 2 4 5 5 1 ...
+                2 2 5 1 3];
 
 %% LOOP OVER SUBJECTS TO READ LOGFILES, CREATE TABLE WITH ONSETS AND DURATIONS, AND SAVE AS EVENTS.TSV TO BIDSSUBJDIRS
 %-------------------------------------------------------------------------------------------------------------------
