@@ -57,12 +57,13 @@
 fwhm = 6; % kernel width in mm
 prefix = 's6-'; % prefix for name of smoothed images
 subjs2smooth = {}; % enter subjects separated by comma if you only want to smooth selected subjects e.g. {'sub-01','sub-02'}
+nr_sess = 2;
 
 
 %% DEFINE DIRECTORIES
 %--------------------------------------------------------------------------
 
-bitter_reward_prep_s0_define_directories;
+bit_rew_prep_s0_define_directories;
 
 
 %% UNZIP IMAGES, SMOOTH, ZIP, SMOOTHED IMAGES, AND DELETE ALL UNZIPPED IMAGES
@@ -77,33 +78,35 @@ if ~isempty(subjs2smooth)
         
         for sub=ia'
             
-            if nr_sess > 1
+                for sess = 1:nr_sess
+
+                    sessid = sprintf('ses-%d',sess);
+                    subjsessdir = fullfile(derivsubjdirs{sub},sessid);
+
+                    cd(fullfile(subjesessdir,'/func'));
+                    % unzip .nii.gz files
+                    gunzip('*preproc_bold*.nii.gz');
+                    % write smoothing spm batch
+                    clear matlabbatch;
+                    matlabbatch = struct([]);
+                    scans=spm_select('ExtFPList',pwd,'.*\.nii$',Inf);
+                    kernel = ones(1,3).*fwhm;
+                    matlabbatch{1}.spm.spatial.smooth.data = cellstr(scans);
+                    matlabbatch{1}.spm.spatial.smooth.fwhm = kernel;
+                    matlabbatch{1}.spm.spatial.smooth.dtype = 0;
+                    matlabbatch{1}.spm.spatial.smooth.im = 0;
+                    matlabbatch{1}.spm.spatial.smooth.prefix = prefix;
+                    % save batch and run
+                    eval(['save ' derivsubjs{sub,:} '_smooth.mat matlabbatch']); 
+                    spm_jobman('initcfg');
+                    spm_jobman('run',matlabbatch);
+                    % zip smoothed files
+                    gzip('s6*');
+                    % delete all unzipped files
+                    delete('*.nii');
+
+                end % for loop over sessions
             
-            for sess = 1:nr_sess
-                sessid = sprintf('ses-%d',sess);
-            cd([derivsubjdirs{sub,:},'/func']);
-            % unzip .nii.gz files
-            gunzip('*preproc_bold*.nii.gz');
-            % write smoothing spm batch
-            clear matlabbatch;
-            matlabbatch = struct([]);
-            scans=spm_select('ExtFPList',pwd,'.*\.nii$',Inf);
-            kernel = ones(1,3).*fwhm;
-            matlabbatch{1}.spm.spatial.smooth.data = cellstr(scans);
-            matlabbatch{1}.spm.spatial.smooth.fwhm = kernel;
-            matlabbatch{1}.spm.spatial.smooth.dtype = 0;
-            matlabbatch{1}.spm.spatial.smooth.im = 0;
-            matlabbatch{1}.spm.spatial.smooth.prefix = prefix;
-            % save batch and run
-            eval(['save ' derivsubjs{sub,:} '_smooth.mat matlabbatch']); 
-            spm_jobman('initcfg');
-            spm_jobman('run',matlabbatch);
-            % zip smoothed files
-            gzip('s6*');
-            % delete all unzipped files
-            delete('*.nii');
-            
-            end % for loop over sessions
         end % for loop over subjs2smooth
         
     end % if loop checking intersection of subjs2smooth and subjdirs
@@ -111,29 +114,36 @@ if ~isempty(subjs2smooth)
 else
     
     for sub=1:size(derivsubjdirs,1)
+            
+            for sess = 1:nr_sess
+                
+                sessid = sprintf('ses-%d',sess);
+                subjsessdir = fullfile(derivsubjdirs{sub},sessid);
         
-        cd([derivsubjdirs{sub,:},'/func']);
-        % unzip .nii.gz files
-        gunzip('*preproc_bold*.nii.gz');
-        % write smoothing spm batch
-        clear matlabbatch;
-        matlabbatch = struct([]);
-        scans=spm_select('ExtFPList',pwd,'.*\.nii$',Inf);
-        kernel = ones(1,3).*fwhm;
-        matlabbatch{1}.spm.spatial.smooth.data = cellstr(scans);
-        matlabbatch{1}.spm.spatial.smooth.fwhm = kernel;
-        matlabbatch{1}.spm.spatial.smooth.dtype = 0;
-        matlabbatch{1}.spm.spatial.smooth.im = 0;
-        matlabbatch{1}.spm.spatial.smooth.prefix = prefix;
-        % save batch and run
-        eval(['save ' derivsubjs{sub,:} '_smooth.mat matlabbatch']); 
-        spm_jobman('initcfg');
-        spm_jobman('run',matlabbatch);
-        % zip smoothed files
-        gzip('s6*');
-        % delete all unzipped files
-        delete('*.nii');
+                cd(fullfile(subjsessdir,'/func'));
+                % unzip .nii.gz files
+                gunzip('*preproc_bold*.nii.gz');
+                % write smoothing spm batch
+                clear matlabbatch;
+                matlabbatch = struct([]);
+                scans=spm_select('ExtFPList',pwd,'.*\.nii$',Inf);
+                kernel = ones(1,3).*fwhm;
+                matlabbatch{1}.spm.spatial.smooth.data = cellstr(scans);
+                matlabbatch{1}.spm.spatial.smooth.fwhm = kernel;
+                matlabbatch{1}.spm.spatial.smooth.dtype = 0;
+                matlabbatch{1}.spm.spatial.smooth.im = 0;
+                matlabbatch{1}.spm.spatial.smooth.prefix = prefix;
+                % save batch and run
+                eval(['save ' derivsubjs{sub,:} '_smooth.mat matlabbatch']); 
+                spm_jobman('initcfg');
+                spm_jobman('run',matlabbatch);
+                % zip smoothed files
+                gzip('s6*');
+                % delete all unzipped files
+                delete('*.nii');
         
+            end % for loop over sessions
+            
     end % for loop over subjdirs
     
 end % if loop checking smoothing option

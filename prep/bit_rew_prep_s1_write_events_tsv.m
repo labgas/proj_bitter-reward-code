@@ -52,20 +52,20 @@
 
 bit_rew_prep_s0_define_directories; % lukasvo edited from original LaBGAScore script to enable standalone functioning of proj_ery_4a dataset
 
-subjs2write = {}; % enter subjects separated by comma if you only want to write files for selected subjects e.g. {'sub-01','sub-02'}
+subjs2write = {'sub-001'}; % enter subjects separated by comma if you only want to write files for selected subjects e.g. {'sub-01','sub-02'}
 pheno_tsv = true; % turn to false if you do not wish to generate a phenotype.tsv file with trial-by-trial ratings; will only work if subjs2write is empty (i.e. when you loop over all your subjects)
 pheno_name = 'ratings_online.tsv';
 
 runnames = {'run-1','run-2','run-3','run-4'};
 logfilenames = {'*_run1_photo_results.txt','*_run2_photo_results.txt','*_run3-FID_1_final*.log','*_run4-FID_1_final*.log'};
-taskname1 = 'food_pictures_';
+taskname1 = 'food_images_';
 taskname2 = 'FID_';
-% sweet_labels = {'sucrose delivery';'erythritol delivery';'sucralose delivery';'control delivery'}; % labels for sweet substance delivery in Code var of logfile
+image_labels = {'High*';'Low*';'Neutral*';'flow*'}; % labels for sweet substance delivery in Code var of logfile
 % swallow_rinse_labels = {'sucrose_swallowing';'erythritol_swallowing';'sucralose_swallowing';'control_swallowing'}; % labels for swallowing cue presentation after sweet substance delivery in Code var of logfile
 % rating_labels = {'Sucrose','Erythritol','Sucralose','Control'}; % labels for start of rating period in Code var of logfile
 % fixation_labels = {'fixation_cross','Sucrose fixation cross','Erythritol fixation cross','Sucralose fixation cross','Control fixation cross'}; % labels for fixation cross in Code var of logfile
-% events_interest = {'sucrose','erythritol','sucralose','water'}; % names of events of interest to be written to events.tsv
-% events_nuisance = {'swallow_rinse','rating'}; % names of nuisance events to be written to events.tsv
+image_events_interest = {'high calorie','low calorie','neutral'}; % names of events of interest to be written to events.tsv
+image_events_nuisance = {'rest','rating'}; % names of nuisance events to be written to events.tsv
 % 
 varNames = {'version','timestamp','block number','trial number','lost msec','free VRAM','Conditie','time_start','time_end','trial contents'}; % varnames of logfile
 selectedVarNames = [8:10]; % varnames we want to use in the script
@@ -94,9 +94,9 @@ TR = 2.5; % in seconds
 % conditions run1 and run2
 conditions_name12 = {
     'rest'
-    'HC'
-    'LC'
-    'NF'
+    'high calorie'
+    'low calorie'
+    'neutral'
     'rating'
     };
 
@@ -128,7 +128,7 @@ if ~isempty(subjs2write)
     [C,ia,~] = intersect(sourcesubjs,subjs2write);
     
     if ~isequal(C',subjs2write)
-        error('\nsubject %s present in subjs2write not present in %s, please check before proceeding',subjs2swrite{~ismember(subjs2swrite,C)},derivdir);
+        error('\nsubject %s present in subjs2write not present in %s, please check before proceeding',subjs2write{~ismember(subjs2write,C)},derivdir);
     
     else
         
@@ -200,6 +200,7 @@ if ~isempty(subjs2write)
                                   index_rest = [index_rest i];
                                end
                            end
+                           
                            % since 8 images were shown, the index_LC, index_HC and index_NF
                            % contain always blocks of 8 subsequent images. We only need the
                            % onset of the block of images.
@@ -221,59 +222,47 @@ if ~isempty(subjs2write)
                            durations{3} = 24; % 8 LC images x 3s
                            durations{4} = 24; % 8 NF images x 3s        
                            durations{5} = tmp_durations(listorder);
-                            
-                            
-                            log = readtable(logfilepath,opts);
-                            
-                            index_LC     = [];
-                            index_HC     = [];
-                            index_NF     = [];
-                            index_rest   = [];
-                            index_rating = [];
-                           for i = 1:length(log.trialContents)
-                               if strfind(tmp10{i},'Low') == 1
-                                  index_LC = [index_LC i];
-                               elseif strfind(tmp10{i},'High') == 1
-                                  index_HC = [index_HC i];
-                               elseif strfind(tmp10{i},'Neutral') == 1
-                                  index_NF = [index_NF i];
-                               elseif strfind(tmp10{i},'flow') == 1
-                                  index_rest = [index_rest i];
-                               end
-                           end
-                            
-%                             log = log(~isnan(log.Trial),:);
-%                             time_zero = log.Time(log.Trial == 0 & log.EventType == 'Pulse'); % time for onsets and durations is counted from the first scanner pulse onwards
-% 
-%                                 if size(time_zero,1) > 1
-%                                     error('\nambiguity about time zero in %s%s, please check logfile',subjs{sub},logfilenames{run});
-%                                 end
-% 
-%                             log.TimeZero = log.Time - time_zero;
-                            log.onset = log.TimeZero ./ 10000; % convert to seconds
-                            log(log.EventType == 'Pulse',:) = [];
-                            log.trial_type = cell(height(log),1);
+                           
 
-                                for k = 1:height(log)
-                                    if ismember(log.Code(k),swallow_rinse_labels)
-                                        log.trial_type{k} = events_nuisance{1};
-
-                                    elseif ismember(log.Code(k),rating_labels)
-                                        log.trial_type{k} = events_nuisance{2};
-                                        log.onset(k) = log.onset(k)+4;
-
-                                    elseif ismember(log.Code(k),sweet_labels)
-                                        idx = (log.Code(k) == sweet_labels);
-                                        log.trial_type{k} = events_interest{idx'};
-
-                                    elseif ismember(log.Code(k),fixation_labels)
-                                        log.trial_type{k} = 'fixation';
-
+                            onset = [];
+                            duration = [];
+                            trial_type = categorical();
+                                for cond = 1:size(conditions_name12,1)
+                                    if cond < 5
+                                        trial_type_block = categorical();
+                                        duration_block = [];
+                                        
+                                        for block = 1:size(onsets_blocks{cond},1)
+                                            trial_type_block(block,1) = conditions_name12{cond};
+                                            duration_block(block,1) = durations{cond};
+                                        end
+                                        
+                                        onset = [onset; onsets_blocks{cond}];
+                                        duration = [duration; duration_block];
+                                        trial_type = [trial_type; trial_type_block];
+                                        clear trial_type_block duration_block
+                                        
                                     else
-                                        log.trial_type{k} = '';
-
+                                        trial_type_block = categorical();
+                                        
+                                        for block = 1:size(onsets_blocks{cond},1)
+                                            trial_type_block(block,1) = conditions_name12{cond};
+                                        end
+                                        
+                                        onset = [onset; onsets_blocks{cond}];
+                                        duration = [duration; durations{cond}];
+                                        trial_type = [trial_type; trial_type_block];
+                                        clear trial_type_block
+                                        
                                     end
                                 end
+                                
+                             log=table(trial_type,onset,duration);
+                             
+                                    
+                            
+                            
+                            
 
                             log.rating = zeros(height(log),1);
 
