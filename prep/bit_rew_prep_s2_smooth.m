@@ -56,7 +56,7 @@
 
 fwhm = 6; % kernel width in mm
 prefix = 's6-'; % prefix for name of smoothed images
-subjs2smooth = {'sub-018','sub-019','sub-020','sub-022','sub-023'} ; % enter subjects separated by comma if you only want to smooth selected subjects e.g. {'sub-01','sub-02'}
+subjs2smooth = {} ; % enter subjects separated by comma if you only want to smooth selected subjects e.g. {'sub-01','sub-02'}
 nr_sess = 2;
 
 
