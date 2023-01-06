@@ -83,7 +83,7 @@ if ~isempty(subjs2smooth)
                     sessid = sprintf('ses-%d',sess);
                     subjsessdir = fullfile(derivsubjdirs{sub},sessid);
 
-                    cd(fullfile(subjsessdir,'/func'));
+                    cd(fullfile(subjesessdir,'/func'));
                     % unzip .nii.gz files
                     gunzip('*preproc_bold*.nii.gz');
                     % write smoothing spm batch

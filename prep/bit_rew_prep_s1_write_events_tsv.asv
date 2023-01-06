@@ -185,7 +185,7 @@ if ~isempty(subjs2write)
                             onset = [];
                             duration = [];
                             trial_type = categorical();
-                                for cond = 1:size(image_trial_types,2)
+                                for cond = 1:size(image_trial_types,1)
                                     if cond < 5
                                         trial_type_block = categorical();
                                         duration_block = [];
@@ -385,7 +385,7 @@ if ~isempty(subjs2write)
                            
                             onset = [];
                             trial_type = categorical();
-                                for cond = 1:size(FID_trial_types,2)
+                                for cond = 1:size(FID_trial_types,1)
                                         trial_type_event = categorical();
                                         
                                         for ev = 1:size(onsets{cond},1)
@@ -399,8 +399,7 @@ if ~isempty(subjs2write)
                                 end
                                 
                              log=table(trial_type,onset);
-                             log.duration = zeros(height(log),1);
-                             log=sortrows(log,'onset','ascend');
+                             log.duration = zeros(height(log));
                              
 
                             filename = fullfile(sessubjBIDSdir,[sourcesubjs{sub},'_task-',taskname1,runnames{run},'_events.tsv']);
