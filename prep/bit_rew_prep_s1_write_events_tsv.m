@@ -717,10 +717,18 @@ else
                                     idx_truezero = (vas.rating == 0);
                                     
                                     wanting = vas.wanting(1:end-1);
-                                    idx_truezero = idx_truezero(1:end-1);
                                     liking = vas.liking(2:end); % wanting always before liking, we want them on the same row, as well as the index
-                                    ratings = table(wanting,liking);
-                                    idx_zero = logical((ratings.wanting + ratings.liking > 0) + idx_truezero);
+                                    ratings = table(wanting,liking);    
+                                        if sum(idx_truezero) > 0
+                                            if vas.pl_pic(idx_truezero) == 1
+                                                idx_truezero = idx_truezero(1:end-1);
+                                            elseif vas.taste_pic(idx_truezero) == 1
+                                                idx_truezero = idx_truezero(2:end);
+                                            end
+                                            idx_zero = logical((ratings.wanting + ratings.liking > 0) + idx_truezero);
+                                        else
+                                            idx_zero = logical(ratings.wanting + ratings.liking > 0);
+                                        end
                                     ratings = ratings(idx_zero,:);
                                     idx_rating = ismember(log.trial_type,image_trial_types_interest);
                                     
