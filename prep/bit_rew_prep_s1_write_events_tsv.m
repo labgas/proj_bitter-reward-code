@@ -720,7 +720,7 @@ else
                             
                             filename = fullfile(sessubjBIDSdir,[sourcesubjs{sub},'_task-',taskname1,runnames{run},'_events.tsv']);
                             writetable(log,filename,'Filetype','text','Delimiter','\t');
-                            clear datafile index_* tmp* log onset* duration* vas wanting liking ratings idx_rating trial_type filename
+                            clear datafile index_* tmp* onset* duration* vas wanting liking ratings idx_rating trial_type filename
                             
                             % write phenotype.tsv file if requested - Lukas' code
                             
