@@ -706,11 +706,14 @@ else
                                     vas.liking = (vas.rating).*(vas.taste_pic);
                                     vas.keep = vas.pl_pic + vas.taste_pic;
                                     vas = vas((vas.keep == 1),:);
+                                    idx_truezero = (vas.rating == 0);
                                     
                                     wanting = vas.wanting(1:end-1);
-                                    liking = vas.liking(2:end); % wanting always before liking, we want them on the same row
+                                    idx_truezero = idx_truezero(1:end-1);
+                                    liking = vas.liking(2:end); % wanting always before liking, we want them on the same row, as well as the index
                                     ratings = table(wanting,liking);
-                                    ratings = ratings((ratings.wanting + ratings.liking > 0),:); % this would lead to errors in the unlikely case that both ratings are truly zero
+                                    idx_zero = logical((ratings.wanting + ratings.liking > 0) + idx_truezero);
+                                    ratings = ratings(idx_zero,:);
                                     idx_rating = ismember(log.trial_type,image_trial_types_interest);
                                     
                                     log.wanting(idx_rating) = ratings.wanting;
