@@ -52,9 +52,10 @@
 
 bit_rew_prep_s0_define_directories; % lukasvo edited from original LaBGAScore script to enable standalone functioning of proj_ery_4a dataset
 
-subjs2write = {}; % enter subjects separated by comma if you only want to write files for selected subjects e.g. {'sub-01','sub-02'}
+subjs2write = {'sub-001'}; % enter subjects separated by comma if you only want to write files for selected subjects e.g. {'sub-01','sub-02'}
 pheno_tsv = true; % turn to false if you do not wish to generate a phenotype.tsv file with trial-by-trial ratings; will only work if subjs2write is empty (i.e. when you loop over all your subjects)
 pheno_name = 'food_images_wanting_liking.tsv';
+nr_sess = 2;
 
 runnames = {'run-1','run-2','run-1','run-2'}; % for naming of run in events.tsv files - two runs for each task
 logfilenames = {'*_run1_photo_results.txt','*_run2_photo_results.txt','*_run3-FID_1_final*.log','*_run4-FID_1_final*.log'};
@@ -109,7 +110,7 @@ if ~isempty(subjs2write)
         
             % LOOP OVER SESSIONS
             
-            for ses = 1:2
+            for ses = 1:nr_sess
         
             % DEFINE SUBJECT & SESSION LEVEL DIRS
             
@@ -289,7 +290,7 @@ if ~isempty(subjs2write)
                             
                             % write events.tsv file - Lukas' code
                             
-                            filename = fullfile(sessubjBIDSdir,[sourcesubjs{sub},['ses-' num2str(ses)],'_task-',taskname1,runnames{run},'_events.tsv']);
+                            filename = fullfile(sessubjBIDSdir,[sourcesubjs{sub},['_ses-' num2str(ses)],'_task-',taskname1,runnames{run},'_events.tsv']);
                             writetable(log,filename,'Filetype','text','Delimiter','\t');
                             clear datafile index_* tmp* log onset* duration* vas wanting liking ratings idx_rating trial_type filename
                             
@@ -494,7 +495,7 @@ if ~isempty(subjs2write)
                            log=sortrows(log,'onset','ascend');
                              
 
-                           filename = fullfile(sessubjBIDSdir,[sourcesubjs{sub},['_ses-' num2str(ses)],'_task-',taskname1,runnames{run},'_events.tsv']);
+                           filename = fullfile(sessubjBIDSdir,[sourcesubjs{sub},['_ses-' num2str(ses)],'_task-',taskname2,runnames{run},'_events.tsv']);
                            writetable(log,filename,'Filetype','text','Delimiter','\t');
                            clear datafile index_* tmp* log onset* duration* trial_type filename
                            
@@ -718,7 +719,7 @@ else
                             
                             % write events.tsv file - Lukas' code
                             
-                            filename = fullfile(sessubjBIDSdir,[sourcesubjs{sub},'_task-',taskname1,runnames{run},'_events.tsv']);
+                            filename = fullfile(sessubjBIDSdir,[sourcesubjs{sub},['_ses-' num2str(ses)],'_task-',taskname1,runnames{run},'_events.tsv']);
                             writetable(log,filename,'Filetype','text','Delimiter','\t');
                             clear datafile index_* tmp* onset* duration* vas wanting liking ratings idx_rating trial_type filename
                             
@@ -960,7 +961,7 @@ else
                            log.duration = zeros(height(log),1);
                            log=sortrows(log,'onset','ascend');
                              
-                           filename = fullfile(sessubjBIDSdir,[sourcesubjs{sub},['_ses-' num2str(ses)],'_task-',taskname1,runnames{run},'_events.tsv']);
+                           filename = fullfile(sessubjBIDSdir,[sourcesubjs{sub},['_ses-' num2str(ses)],'_task-',taskname2,runnames{run},'_events.tsv']);
                            writetable(log,filename,'Filetype','text','Delimiter','\t');
                            clear datafile index_* tmp* log onset* duration* trial_type filename
                            
