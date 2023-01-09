@@ -52,9 +52,9 @@
 
 bit_rew_prep_s0_define_directories; % lukasvo edited from original LaBGAScore script to enable standalone functioning of proj_ery_4a dataset
 
-subjs2write = {'sub-001'}; % enter subjects separated by comma if you only want to write files for selected subjects e.g. {'sub-01','sub-02'}
+subjs2write = {}; % enter subjects separated by comma if you only want to write files for selected subjects e.g. {'sub-01','sub-02'}
 pheno_tsv = true; % turn to false if you do not wish to generate a phenotype.tsv file with trial-by-trial ratings; will only work if subjs2write is empty (i.e. when you loop over all your subjects)
-pheno_name = 'ratings_online.tsv';
+pheno_name = 'food_images_wanting_liking.tsv';
 
 runnames = {'run-1','run-2','run-1','run-2'}; % for naming of run in events.tsv files - two runs for each task
 logfilenames = {'*_run1_photo_results.txt','*_run2_photo_results.txt','*_run3-FID_1_final*.log','*_run4-FID_1_final*.log'};
