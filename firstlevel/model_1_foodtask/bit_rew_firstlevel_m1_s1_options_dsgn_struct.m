@@ -1,4 +1,4 @@
-%%% LaBGAScore_firstlevel_s1_options_dsgn_struct.m
+%%% bit_rew_firstlevel_m1_s1_options_dsgn_struct.m
 %
 % This script sets the options and creates a CANlab-style DSGN structure
 % variable, which are used by the subsequent script in the standard LaBGAS
@@ -192,7 +192,7 @@ LaBGAS_options.mandatory.spike_def = 'fMRIprep';
 LaBGAS_options.mandatory.omit_spike_trials = 'no';
 LaBGAS_options.mandatory.spikes_percent_threshold=0.15;
 LaBGAS_options.mandatory.vif_thresh=2;
-LaBGAS_options.movement_reg_quadratic = true; % change to false if you don't want to add quadratic terms for movement parameters and their first-order derivatives
+LaBGAS_options.movement_reg_quadratic = false; % change to false if you don't want to add quadratic terms for movement parameters and their first-order derivatives
 
 % OPTIONAL
 LaBGAS_options.subjs2analyze = {}; % enter subjects separated by comma if you only want to analyze selected subjects e.g. {'sub-01','sub-02'}; THIS IS NOT YET FULLY IMPLEMENTED HENCE LEAVE CELL ARRAY EMPTY OR COMMENT OUT OR DO NOT SPECIFY FIELD AT ALL
@@ -229,12 +229,16 @@ end
 % load standard BIDS directory structure from root dir
 % STUDY-SPECIFIC: replace LaBGAScore with name of study-specific script
 
-LaBGAScore_prep_s0_define_directories;
+bit_rew_prep_s0_define_directories;
 
 % define run directory names
 % STUDY-SPECIFIC: names are defaults, only change number
 
-rundirnames = {'run-1';'run-2';'run-3';'run-4';'run-5';'run-6'};
+rundirnames = {'run-1_task-food';'run-2_task-food'};
+
+% set number of sessions
+
+nr_sess = 2; % comment out if you do not have sessions
 
 % define rootdir for Github repos
 % MACHINE-SPECIFIC: change to your local path if not working on LaBGAS server
@@ -247,8 +251,8 @@ githubrootdir = '/data/master_github_repos';
 % INPUT
     
     % REQUIRED FIELDS
-    DSGN.metadata = "proj-erythritol_4a first level analysis model 1, i.e. modeling 4 conditions for sucrose, erythritol, sucralose, and water as long events (= duration of solution in mouth), with sweetness liking ratings as parametric modulators"; % field for annotation with study info, or whatever you like
-    DSGN.modeldir = '/data/proj_erythritol/proj_erythritol_4a/firstlevel/model_1_conds_pmods'; % directory where you want to write first level results for this model
+    DSGN.metadata = "proj-bitter-reward first level analysis model with food images task, i.e. modeling 4 conditions for low calorie images, high calorie images, neutral images and rest as blocks"; % field for annotation with study info, or whatever you like
+    DSGN.modeldir = '/data/proj_bitter-reward/firstlevel/model_1_foodtask'; % directory where you want to write first level results for this model
         if ~isfield(LaBGAS_options,'subjs2analyze')
             DSGN.subjects = derivsubjdirs';
         elseif ~isempty(LaBGAS_options.subjs2analyze)
@@ -264,12 +268,10 @@ githubrootdir = '/data/master_github_repos';
         else
             DSGN.subjects = derivsubjdirs';
         end
-    DSGN.funcnames = {'/func/run-1/s6*.nii',...
-        '/func/run-2/s6*.nii',...
-        '/func/run-3/s6*.nii',...
-        '/func/run-4/s6*.nii',...
-        '/func/run-5/s6*.nii',...
-        '/func/run-6/s6*.nii'}; % cell array (one cell per session) of paths to functional files, relative to absolute path specific in DSGN.subjects
+    DSGN.funcnames = {'/ses-1/func/s6-*ses-1_task-food_run-1.nii',...
+        '/ses-1/func/s6-*ses-1_task-food_run-2.nii',...
+        '/ses-2/func/s6-*ses-2_task-food_run-1.nii',...
+        '/ses-2/func/s6-*ses-2_task-food_run-2.nii'}; % cell array (one cell per session) of paths to functional files, relative to absolute path specific in DSGN.subjects
    
     % OPTIONAL FIELDS
 %     DSGN.concatenation = {[1:6]}; % default: none; cell array of arrays of runs to concatenate; see documentation for when to concatenate, and how it works exactly
@@ -278,11 +280,11 @@ githubrootdir = '/data/master_github_repos';
     
 % PARAMETERS
 
-    DSGN.tr = 1.8; % repetition time (TR) in seconds
+    DSGN.tr = 2.5; % repetition time (TR) in seconds
     DSGN.hpf = 180; % high pass filter in seconds; SPM default is 128, CANlab default is 180 since the brain response to pain stimuli last long and variance may be lost at shorter lengths, use scn_spm_design_check output, and review the SPM.mat in spm for diagnostics; 
     % STUDY-SPECIFIC: in this study, we stick with the CANlab default
-    DSGN.fmri_t = 30; % microtime resolution - t=number of slices since we did slice timing; spm (and CANlab) default 16 can be kept for multiband w/o slice timing; TO BE CHECKED SINCE WE HAVE MULTIBAND WITH SLICE TIMING
-    DSGN.fmri_t0 = 15; % microtime onset - reference slice used in slice timing correction; spm (and CANlab) default 1 can be kept for multiband w/o slice timing
+    DSGN.fmri_t = 46; % microtime resolution - t=number of slices since we did slice timing; spm (and CANlab) default 16 can be kept for multiband w/o slice timing; TO BE CHECKED SINCE WE HAVE MULTIBAND WITH SLICE TIMING
+    DSGN.fmri_t0 = 23; % microtime onset - reference slice used in slice timing correction; spm (and CANlab) default 1 can be kept for multiband w/o slice timing
     
 % MODELING
 

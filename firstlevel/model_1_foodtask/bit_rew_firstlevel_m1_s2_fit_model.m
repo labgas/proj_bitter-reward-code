@@ -234,28 +234,32 @@ for sub=1:size(derivsubjs,1)
     
     %% DEFINE SUBJECT LEVEL DIRS & FILENAMES
     
-    subjderivdir = fullfile(derivsubjdirs{sub},'func');
-    subjBIDSdir = fullfile(BIDSsubjdirs{sub},'func');
-    subjfirstdir = firstsubjdirs{sub};
-    
-    BIDSimgs = dir(fullfile(subjBIDSdir,'*bold.nii.gz'));
-    BIDSimgs = {BIDSimgs(:).name}';
-    BIDSidx = ~contains(BIDSimgs,'rest'); % omit resting state scan if it exists
-    BIDSimgs = {BIDSimgs{BIDSidx}}';
-    
-    derivimgs = dir(fullfile(subjderivdir,'s6-*.nii.gz'));
-    derivimgs = {derivimgs(:).name}';
-    derividx = ~contains(derivimgs,'rest'); % omit resting state scan if it exists
-    derivimgs = {derivimgs{derividx}}';
-    
-    fmriprep_noisefiles = dir(fullfile(subjderivdir,'*desc-confounds_timeseries.tsv'));
-    fmriprep_noisefiles = {fmriprep_noisefiles(:).name}';
-    noiseidx = ~contains(fmriprep_noisefiles,'rest'); % omit resting state scan if it exists
-    fmriprep_noisefiles = {fmriprep_noisefiles{noiseidx}}';
-    
-    % read events.tsv files with onsets, durations, and trial type
-    eventsfiles = dir(fullfile(subjBIDSdir,'*events.tsv'));
-    eventsfiles = {eventsfiles(:).name}';
+    for ses = 1:nr_sess
+        
+    end
+        
+        subjderivdir = fullfile(derivsubjdirs{sub},['ses-' num2str(ses)],'func');
+        subjBIDSdir = fullfile(BIDSsubjdirs{sub},['ses-' num2str(ses)],'func');
+        subjfirstdir = firstsubjdirs{sub};
+
+        BIDSimgs = dir(fullfile(subjBIDSdir,'*bold.nii.gz'));
+        BIDSimgs = {BIDSimgs(:).name}';
+        BIDSidx = ~contains(BIDSimgs,'rest'); % omit resting state scan if it exists
+        BIDSimgs = {BIDSimgs{BIDSidx}}';
+
+        derivimgs = dir(fullfile(subjderivdir,'s6-*.nii.gz'));
+        derivimgs = {derivimgs(:).name}';
+        derividx = ~contains(derivimgs,'rest'); % omit resting state scan if it exists
+        derivimgs = {derivimgs{derividx}}';
+
+        fmriprep_noisefiles = dir(fullfile(subjderivdir,'*desc-confounds_timeseries.tsv'));
+        fmriprep_noisefiles = {fmriprep_noisefiles(:).name}';
+        noiseidx = ~contains(fmriprep_noisefiles,'rest'); % omit resting state scan if it exists
+        fmriprep_noisefiles = {fmriprep_noisefiles{noiseidx}}';
+
+        % read events.tsv files with onsets, durations, and trial type
+        eventsfiles = dir(fullfile(subjBIDSdir,'*events.tsv'));
+        eventsfiles = {eventsfiles(:).name}';
     
         for runname = 1:size(fmriprep_noisefiles,1)
             subjrunnames{runname} = strsplit(fmriprep_noisefiles{runname},'_desc');
