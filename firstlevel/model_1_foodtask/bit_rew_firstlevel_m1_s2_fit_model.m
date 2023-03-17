@@ -230,687 +230,789 @@ firstsubjs = cellstr(char(firstlist(:).name));
 %% LOOP OVER SUBJECTS
 %--------------------------------------------------------------------------
 
+tasknames_fmriprep = split(string(tasknames{1}),'_'); % fmriprep seems to cut off part of taskname after _, hence no use of underscores in tasknames in the future, then this can be omitted and code below changed
+
 for sub=1:size(derivsubjs,1)
     
-    %% DEFINE SUBJECT LEVEL DIRS & FILENAMES
-    
-    for ses = 1:nr_sess
+    if nr_sess == 1 || ~exist('nr_sess','var')
         
-    end
+        %% DEFINE SUBJECT LEVEL DIRS & FILENAMES
         
-        subjderivdir = fullfile(derivsubjdirs{sub},['ses-' num2str(ses)],'func');
-        subjBIDSdir = fullfile(BIDSsubjdirs{sub},['ses-' num2str(ses)],'func');
+        subjderivdir = fullfile(derivsubjdirs{sub},'func');
+        subjBIDSdir = fullfile(BIDSsubjdirs{sub},'func');
         subjfirstdir = firstsubjdirs{sub};
 
-        BIDSimgs = dir(fullfile(subjBIDSdir,'*bold.nii.gz'));
+        BIDSimgs = dir(fullfile(subjBIDSdir,['*' tasknames{1} '*bold.nii.gz']));
         BIDSimgs = {BIDSimgs(:).name}';
         BIDSidx = ~contains(BIDSimgs,'rest'); % omit resting state scan if it exists
         BIDSimgs = {BIDSimgs{BIDSidx}}';
 
-        derivimgs = dir(fullfile(subjderivdir,'s6-*.nii.gz'));
+        derivimgs = dir(fullfile(subjderivdir,['s6*' char(tasknames_fmriprep(1,:)) '*.nii.gz'])); % change to tasknames{1} if you don't have _ in your taskname
         derivimgs = {derivimgs(:).name}';
         derividx = ~contains(derivimgs,'rest'); % omit resting state scan if it exists
         derivimgs = {derivimgs{derividx}}';
 
-        fmriprep_noisefiles = dir(fullfile(subjderivdir,'*desc-confounds_timeseries.tsv'));
+        fmriprep_noisefiles = dir(fullfile(subjderivdir,['*' char(tasknames_fmriprep(1,:)) '*desc-confounds_timeseries.tsv'])); % change to tasknames{1} if you don't have _ in your taskname
         fmriprep_noisefiles = {fmriprep_noisefiles(:).name}';
         noiseidx = ~contains(fmriprep_noisefiles,'rest'); % omit resting state scan if it exists
         fmriprep_noisefiles = {fmriprep_noisefiles{noiseidx}}';
 
         % read events.tsv files with onsets, durations, and trial type
-        eventsfiles = dir(fullfile(subjBIDSdir,'*events.tsv'));
+        eventsfiles = dir(fullfile(subjBIDSdir,['*' tasknames{1} '*events.tsv']));
         eventsfiles = {eventsfiles(:).name}';
-    
-        for runname = 1:size(fmriprep_noisefiles,1)
-            subjrunnames{runname} = strsplit(fmriprep_noisefiles{runname},'_desc');
-            subjrunnames{runname} = subjrunnames{runname}{1};
-            subjrundirnames{runname} = subjrunnames{runname}(end-4:end);
-        end
-        
-    subjrunnames = subjrunnames';
-    subjrundirnames = subjrundirnames';
-        
-    % create rundirs in subjderivdir if needed
-        if ~isfolder(fullfile(subjderivdir,rundirnames{1}))
-            cd(subjderivdir);
-            cellfun(sm,rundirnames);
-        end
-    
-    cd(rootdir);
-    
-    % sanity check #1: number of images & noise/event files
-        if ~isequal(size(BIDSimgs,1),size(derivimgs,1),size(fmriprep_noisefiles,1),size(eventsfiles,1)) 
-            error('\nnumbers of raw images, preprocessed images, noise, and events files do not match for %s, please check BIDSimgs, derivimgs, fmriprep_noisefiles, and eventsfiles variables before proceeding',derivsubjs{sub});
-        else
-            warning('\nnumbers of raw images, preprocessed images, noise, and events files match for %s, continuing',derivsubjs{sub});
-        end
 
-    %% LOOP OVER RUNS: CREATE NOISE REGRESSORS, ONSETS, DURATIONS, AND PARAMETRIC MODULATORS
-    
-    for run=1:size(fmriprep_noisefiles,1)
-        
-        %% PREP WORK
-        
-        % define subdir for this run
-        rundir = fullfile(subjderivdir,subjrundirnames{run});
-        
-        % move fmriprep noisefile and smoothed image into subdir if needed
-        rundirlist = dir(rundir);
-        rundirlist = [rundirlist(:).name];
-            if isempty(rundirlist)
-                copyfile(fullfile(subjderivdir,fmriprep_noisefiles{run}),fullfile(rundir,fmriprep_noisefiles{run}));
-            elseif ~contains(rundirlist,fmriprep_noisefiles{run})
-                copyfile(fullfile(subjderivdir,fmriprep_noisefiles{run}),fullfile(rundir,fmriprep_noisefiles{run}));
-            end
-
-            if isempty(rundirlist)
-                copyfile(fullfile(subjderivdir,derivimgs{run}),fullfile(rundir,derivimgs{run}));
-                gunzip(fullfile(rundir,derivimgs{run}));
-                delete(fullfile(rundir,derivimgs{run}));
-            elseif ~contains(rundirlist,derivimgs{run})
-                copyfile(fullfile(subjderivdir,derivimgs{run}),fullfile(rundir,derivimgs{run}));
-                gunzip(fullfile(rundir,derivimgs{run}));
-                delete(fullfile(rundir,derivimgs{run}));
-            end
-
-            
-        %% CONFOUND REGRESSOR FILES
-        
-        % load confound regressor file generated by fMRIprep into Matlab table
-        % variable
-        Rfull = readtable(fullfile(rundir,fmriprep_noisefiles{run}),'TreatAsEmpty','n/a','FileType', 'text', 'Delimiter', 'tab');
-
-        % replace NaNs in first row with Os
-        wh_replace = ismissing(Rfull(1,:));
-            if any(wh_replace)
-                Rfull{1, wh_replace} = zeros(1, sum(wh_replace)); % make array of zeros of the right size
-            end
-
-        % calculate and extract confound regressors
-            if strcmpi(LaBGAS_options.mandatory.spike_def,'fMRIprep')==1 % switch would probably make more sense in this case, but this works too!
-
-                % define regressors in fMRIprep output
-                regs=Rfull.Properties.VariableNames;
-                spike_cols = contains(regs,'motion_outlier');
-                Rspikes=Rfull(:,spike_cols);
-                Rspikes.spikes=sum(Rspikes{:,1:end},2);
-                volume_idx = [1:height(Rfull)]; 
-                spikes = volume_idx(Rspikes.spikes==1);
-
-                % flag user-specified number of volumes after each spike
-                % Motion can create artifacts lasting longer than the single image we
-                % usually account for using spike id scripts. we're also going to flag the
-                % following TRs, the number of which is defined by the user. If
-                % 'LaBGAS_options.spikes.spike_additional_vols' remains unspecified, everything will proceed as
-                % it did before, meaning spikes will be identified and flagged in the
-                % creation of nuisance regressors without considering the following TRs
-                % Add them if user requested, for both nuisance_covs and dvars_spikes_regs
-                    if LaBGAS_options.spikes.spike_additional_vols ~= 0
-                        additional_spikes_regs = zeros(height(Rfull),size(spikes,2)*LaBGAS_options.spikes.spike_additional_vols);
-                            % This loop will create a separate column with ones in each row (TR) 
-                            % we would like to consider a nuisance regressor
-                            for spike = 1:size(spikes,2) 
-                                additional_spikes_regs(spikes(spike)+1 : spikes(spike)+LaBGAS_options.spikes.spike_additional_vols,(spike*LaBGAS_options.spikes.spike_additional_vols-(LaBGAS_options.spikes.spike_additional_vols-1)):(spike*LaBGAS_options.spikes.spike_additional_vols)) = eye(LaBGAS_options.spikes.spike_additional_vols);
-                            end
-                            clear spike
-                        % if any spikes went beyond the end, trim it down
-                        additional_spikes_regs = additional_spikes_regs(1:height(Rfull),:);
-                        % add the additional spikes to the larger matrix
-                        Rfull = [Rfull array2table(additional_spikes_regs)];
-                    end
-
-                % remove redundant spike regressors
-                regs = Rfull.Properties.VariableNames;
-                spike_cols = contains(regs,'motion_outlier');
-                additional_spike_cols = contains(regs,'additional_spikes'); 
-                [duplicate_rows, ~] = find(sum(Rfull{:, spike_cols | additional_spike_cols}, 2)>1);
-                    for row = 1:length(duplicate_rows) % This loop sets duplicate values to zero; drops them later (to keep indices the same during the loop)
-                        [~,curr_cols] = find(Rfull{duplicate_rows(row),:}==1);
-                        Rfull{duplicate_rows(row), curr_cols(2:end)} = 0;
-                    end
-                    clear row
-                Rfull = Rfull(1:height(Rfull), any(table2array(Rfull)));
-
-            elseif strcmpi(LaBGAS_options.mandatory.spike_def,'CANlab')==1
-
-                % unzip & define raw image file
-                gunzip(fullfile(subjBIDSdir,BIDSimgs{run})); % raw images are needed when LaBGAS_options.mandatory.spike_def = CANlab, which calls a function that is incompatible with .nii.gz, hence we unzip
-                uBIDSimg = dir(fullfile(subjBIDSdir,'*bold.nii'));
-                uBIDSimg = fullfile(uBIDSimg(:).folder,uBIDSimg(:).name);
-
-                % add in canlab spike detection (Mahalanobis distance)
-                cd(rundir);
-                [~, mahal_spikes, ~, mahal_spikes_regs, ~] = scn_session_spike_id(uBIDSimg, 'doplot', 0); % CANlab function needs to be on your Matlab path
-                delete('*.img'); % delete implicit mask .hdr/.img files generated by the CANlab function on the line above, since we don't need/use them
-                delete('*.hdr');
-                delete('qc_results.yaml');
-                delete(uBIDSimg); % delete unzipped image since we don't need it anymore and it eats up space
-                mahal_spikes_regs(:,1) = []; %drop gtrim which is the global signal
-                Rfull(:,contains(Rfull.Properties.VariableNames,'motion_outlier'))=[]; % drop fmriprep motion outliers since we do not use them when LaBGAS_options.mandatory.spike_def = CANlab, and they cause redundancies
-                Rfull = [Rfull array2table(mahal_spikes_regs)];
-                cd(rootdir);
-
-                % add in dvars spike regressors that are non-redundant with mahal spikes
-                dvarsZ = [0; zscore(Rfull.dvars(2:end))]; % first element of dvars always = 0, drop it from zscoring and set it to Z=0
-                dvars_spikes = find(dvarsZ > LaBGAS_options.spikes.dvars_threshold);
-                same = ismember(dvars_spikes,mahal_spikes);
-                dvars_spikes(same) = []; % drop the redundant ones
-                dvars_spikes_regs = zeros(height(Rfull),size(dvars_spikes,1));
-                    for dvar=1:size(dvars_spikes,1)
-                        dvars_spikes_regs(dvars_spikes(dvar),dvar) = 1;
-                    end
-                Rfull = [Rfull array2table(dvars_spikes_regs)];
-
-                % flag user-specified number of volumes after each spike
-                % Motion can create artifacts lasting longer than the single image we
-                % usually account for using spike id scripts. we're also going to flag the
-                % following TRs, the number of which is defined by the user. If
-                % 'LaBGAS_options.spikes.spike_additional_vols' remains unspecified, everything will proceed as
-                % it did before, meaning spikes will be identified and flagged in the
-                % creation of nuisance regressors without considering the following TRs
-                % Add them if user requested, for both nuisance_covs and dvars_spikes_regs
-                    if LaBGAS_options.spikes.spike_additional_vols ~= 0
-                        % concatenate generated spike and DVARS regs. We
-                        % would like to flag subsequent TR's with respect to both of these
-                        % measures.
-                        spikes = [mahal_spikes;dvars_spikes];
-                        additional_spikes_regs = zeros(size(mahal_spikes_regs,1),size(spikes,1)*LaBGAS_options.spikes.spike_additional_vols);
-                            % This loop will create a separate column with ones in each row (TR) 
-                            % we would like to consider a nuisance regressor
-                            % Performs this function for spikes and DVARS. 
-                            for spike = 1:size(spikes,1) 
-                                additional_spikes_regs(spikes(spike)+1 : spikes(spike)+spike_additional_vols,(spike*spike_additional_vols-(spike_additional_vols-1)):(spike*spike_additional_vols)) = eye(spike_additional_vols);
-                            end
-                            clear spike
-                        % if any spikes went beyond the end, trim it down
-                        additional_spikes_regs = additional_spikes_regs(1:height(Rfull),:);
-                        % add the additional spikes to the larger matrix
-                        Rfull = [Rfull array2table(additional_spikes_regs)];
-                    end
-
-                % remove redundant spike regressors
-                regs = Rfull.Properties.VariableNames;
-                spike_cols = contains(regs,'mahal_spikes'); 
-                dvars_cols = contains(regs,'dvars_spikes'); 
-                additional_spike_cols = contains(regs,'additional_spikes'); 
-
-                [duplicate_rows, ~] = find(sum(Rfull{:, spike_cols | dvars_cols | additional_spike_cols}, 2)>1);
-                % set duplicate values to zero; drops them later (to keep indices the same during the loop)
-                    for row = 1:size(duplicate_rows,1) 
-                        [~,curr_cols] = find(Rfull{duplicate_rows(row),:}==1);
-                        Rfull{duplicate_rows(row), curr_cols(2:end)} = 0;
-                    end
-                    clear row
-                Rfull = Rfull(1:size(mahal_spikes_regs,1), any(table2array(Rfull)));
-            else
-                error('\ninvalid LaBGAS_options.mandatory.spike_def option %s specified in <study_name>_firstlevel_<mx>_s1_options_dsgn_struct.m, please check before proceeding', LaBGAS_options.mandatory.spike_def)
-            end
-
-        % Select confound and spike regressors to return for use in GLM 
-        regsfull = Rfull.Properties.VariableNames;
-        motion_cols = contains(regsfull,'rot') | contains(regsfull,'trans');
-        motion_cols_no_quad = (contains(regsfull,'rot') | contains(regsfull,'trans')) & ~contains(regsfull,'power2');
-        spike_cols = contains(regsfull,'mahal_spikes') | contains(regsfull,'motion_outlier'); 
-        dvars_cols = contains(regsfull,'dvars_spikes'); 
-        additional_spike_cols = contains(regsfull,'additional_spikes'); 
-            if LaBGAS_options.movement_reg_quadratic
-                Rmotion = Rfull(:,motion_cols);
-            else
-                Rmotion = Rfull(:,motion_cols_no_quad);
-            end
-        Rspikes = Rfull(:,spike_cols | dvars_cols | additional_spike_cols);
-        Rcsf = table(Rfull.csf,'VariableNames',{'csf'});
-        
-        % recalculate derivatives, z-score, and recalculate
-        % quadratics to orthogonalize
-        regsmotion = Rmotion.Properties.VariableNames;
-        regsnot2keep = contains(regsmotion,'derivative') | contains(regsmotion,'power');
-        regsderiv = regsmotion(~contains(regsmotion,'power'));
-        regsderiv = regsderiv(contains(regsderiv,'derivative'));
-        Rmotion = Rmotion(:,~regsnot2keep);
-        deriv = @(x) gradient(x);
-        Rmotionderiv = varfun(deriv,Rmotion);
-            for regderiv = 1:size(Rmotionderiv.Properties.VariableNames,2)
-                Rmotionderiv.Properties.VariableNames{regderiv} = regsderiv{regderiv};
-            end
-        Rmotionderiv = [Rmotion,Rmotionderiv];
-        regsmotion2 = Rmotionderiv.Properties.VariableNames;
-        zscore = @(x) zscore(x);
-        Rmotionzscore = varfun(deriv,Rmotionderiv);
-            for regz = 1:size(Rmotionzscore.Properties.VariableNames,2)
-                Rmotionzscore.Properties.VariableNames{regz} = regsmotion2{regz};
-            end
-            
-            if LaBGAS_options.movement_reg_quadratic
-                quad = @(x) x.^ 2;
-                Rmotionquad = varfun(quad,Rmotionzscore);
-                Rmotionfinal = [Rmotionzscore,Rmotionquad];
-            else Rmotionfinal = Rmotionzscore;
-            end
-        R = [Rmotionfinal,Rspikes,Rcsf];
-        
-        % get row indices for spikes for later use
-        Rspikes.spikes=sum(Rspikes{:,1:end},2);
-        volume_idx = [1:height(Rfull)]; 
-        spikes = volume_idx(Rspikes.spikes==1)';
-
-        % compute and output how many spikes total
-        n_spike_regs = sum(dvars_cols | spike_cols | additional_spike_cols);
-        n_spike_regs_percent = n_spike_regs / height(Rfull);
-
-        % print warning if #volumes identified as spikes exceeds
-        % user-defined threshold
-            if n_spike_regs_percent > LaBGAS_options.mandatory.spikes_percent_threshold
-                warning('\nnumber of volumes identified as spikes exceeds threshold %s in %s',LaBGAS_options.mandatory.spikes_percent_threshold,subjrunnames{run})
-            end
-
-        % save confound regressors as matrix named R for use in
-        % SPM/CANlab GLM model tools
-        R=table2array(R);
-
-        % define and create subdir for model
-        runmodeldir = fullfile(rundir,DSGN.modelingfilesdir);
-            if ~exist(runmodeldir,'dir')
-                mkdir(runmodeldir);
-            end
-
-        % write confound regressors
-        filename_noise_regs = fullfile(runmodeldir,DSGN.multireg);
-        save(filename_noise_regs,'R');
-
-        clear Rmotion* Rcsf Rspikes
-
-        %% EVENTS FILES
-        
-        % read events.tsv files
-        O = readtable(fullfile(subjBIDSdir,eventsfiles{run}),'FileType', 'text', 'Delimiter', 'tab');
-        O.trial_type = categorical(O.trial_type);
-        
-        % sanity check #2: conditions
-        cat_conds = reordercats(categorical(DSGN.conditions{run}));
-        cat_conds = categories(cat_conds);
-        cat_trial_type = cellstr(unique(O.trial_type));
-
-            if ~isequal(cat_trial_type,cat_conds)
-                error('\nconditions in DSGN structure do not match conditions in %s, please check before proceeding',fmriprep_noisefiles{run})
-            else 
-                warning('\nconditions in DSGN structure match conditions in %s, continuing',fmriprep_noisefiles{run})
-            end
-            
-        % omit trials that coincide with spikes if that option is chosen
-            if strcmpi(LaBGAS_options.mandatory.omit_spike_trials,'yes')==1
-                same=ismember(O.onset,spikes); % identify trials for which onset coincides with spike
-                O(same,:)=[]; % get rid of trials coinciding with spikes
-            elseif strcmpi(LaBGAS_options.mandatory.omit_spike_trials,'no')==1
-            else
-                error('\ninvalid LaBGAS_options.mandatory.omit_spike_trials option %s set in <study_name>_firstlevel_<mx>_s1_options_dsgn_struct.m',LaBGAS_options.mandatory.omit_spike_trials)
-            end
-
-        % initialize structures for conditions
-            for cond = 1:size(DSGN.conditions{1},2)
-                cond_struct{cond} = struct('name',{DSGN.conditions{run}(cond)}, ...
-                    'onset',{{[]}}, ...
-                    'duration',{{[]}});
-            end
-
-            clear cond
-
-        % fill structures with onsets and durations
-            for trial = 1:size(O.trial_type,1)
-                cond = 1;
-                while cond < size(DSGN.conditions{run},2) + 1
-                    switch O.trial_type(trial)
-                        case DSGN.conditions{run}{cond}
-                                cond_struct{cond}.onset{1} = [cond_struct{cond}.onset{1},O.onset(trial)];
-                                cond_struct{cond}.duration{1} = [cond_struct{cond}.duration{1},O.duration(trial)];
-                    end
-                cond = cond + 1;
-                end
-                continue
-            end
-
-            clear trial cond
-            
-        % create and plot design including conditions of no interest, and
-        % save figure
-        
-        if LaBGAS_options.display.plotdesign
-        
-            nii = dir(fullfile(rundir,'*.nii')).name;
-            nii_hdr = read_hdr(fullfile(rundir,nii)); % reads Nifti header of smoothed image into a structure
-
-                if isfield(DSGN,'convolution')
-                    switch DSGN.convolution.type
-                        case 'hrf'
-                            if DSGN.convolution.time == 0
-                                hrf_name = spm_hrf(1);
-                            elseif DSGN.convolution.time == 1
-                                if DSGN.convolution.dispersion == 0
-                                    hrf_name = 'hrf (with time derivative)';
-                                elseif DSGN.convolution.dispersion == 1
-                                    hrf_name = 'hrf (with time and dispersion derivatives)';
-                                else
-                                    error('\nUnrecognized convolution type: %s',DSGN.convolution.dispersion)
-                                end
-                            else
-                               error('\nUnrecognized convolution type: %s',DSGN.convolution.type)
-                            end
-                        case 'fir'
-                            hrf_name = 'Finite Impulse Response';
-                        otherwise
-                            error('\nUnrecognized convolution type: %s',DSGN.convolution.type)
-                    end
+            for runname = 1:size(fmriprep_noisefiles,1)
+                subjrunnames{runname} = strsplit(fmriprep_noisefiles{runname},'_desc');
+                subjrunnames{runname} = subjrunnames{runname}{1};
+                if size(tasknames,1) == 1
+                    subjrundirnames{runname} = subjrunnames{runname}(end-4:end);
                 else
-                    hrf_name = spm_hrf(1);
-                end                                
+                    subjrundirnames{runname} = [subjrunnames{runname}(end-4:end) '_' char(tasknames_fmriprep(1,:))]; % change to tasknames{1} if you don't have _ in your taskname
+                end
+            end
 
-            ons_durs = cell(1,size(cat_trial_type,1));
+        subjrunnames = subjrunnames';
+        subjrundirnames = subjrundirnames';
 
-                for cond = 1:size(DSGN.conditions{run},2)
-                    ons_durs{cond}(:,1) = cond_struct{1,cond}.onset{1};
-                    ons_durs{cond}(:,2) = cond_struct{1,cond}.duration{1};
+        % create rundirs in subjderivdir if needed
+            if ~isfolder(fullfile(subjderivdir,rundirnames{1}))
+                cd(subjderivdir);
+                cellfun(sm,rundirnames);
+            end
+    
+        % sanity check #1: number of images & noise/event files
+            if ~isequal(size(BIDSimgs,1),size(derivimgs,1),size(fmriprep_noisefiles,1),size(eventsfiles,1)) 
+                error('\nnumbers of raw images, preprocessed images, noise, and events files do not match for %s, please check BIDSimgs, derivimgs, fmriprep_noisefiles, and eventsfiles variables before proceeding',derivsubjs{sub});
+            else
+                warning('\nnumbers of raw images, preprocessed images, noise, and events files match for %s, continuing',derivsubjs{sub});
+            end
+    
+        cd(rootdir);
+
+        %% LOOP OVER RUNS: CREATE NOISE REGRESSORS, ONSETS, DURATIONS, AND PARAMETRIC MODULATORS
+    
+        for run=1:size(fmriprep_noisefiles,1)
+
+            %% PREP WORK
+
+            % define subdir for this run
+            rundir = fullfile(subjderivdir,subjrundirnames{run});
+
+            % move fmriprep noisefile and smoothed image into subdir if needed
+            rundirlist = dir(rundir);
+            rundirlist = [rundirlist(:).name];
+                if isempty(rundirlist)
+                    copyfile(fullfile(subjderivdir,fmriprep_noisefiles{run}),fullfile(rundir,fmriprep_noisefiles{run}));
+                elseif ~contains(rundirlist,fmriprep_noisefiles{run})
+                    copyfile(fullfile(subjderivdir,fmriprep_noisefiles{run}),fullfile(rundir,fmriprep_noisefiles{run}));
                 end
 
-                clear cond
-
-            [Xfull,~,~,hrf_full] = onsets2fmridesign(ons_durs,DSGN.tr,nii_hdr.tdim .*DSGN.tr, hrf_name);    
-
-            f1 = figure('WindowState','maximized');
-
-            subplot(2,1,1);
-            plotDesign(ons_durs,[],DSGN.tr,'samefig','basisset',hrf_name);
-            ax1 = gca;
-            ax1.TickLabelInterpreter = 'none';
-            ax1.YTick = [1:size(DSGN.conditions{run},2)];
-            ax1.YTickLabel = (DSGN.conditions{run});
-            ax1.YLabel.String = 'condition';
-            ax1.YLabel.FontSize = 12;
-            ax1.YLabel.FontWeight = 'bold';
-            ax1.XLabel.FontSize = 12;
-            ax1.XLabel.FontWeight = 'bold';
-            ax1.FontSize = 11;
-            ax1.Title.FontSize = 14;
-            ax1.Title.FontWeight = 'bold';
-            ax1.TitleHorizontalAlignment = 'left';
-
-            subplot(2,1,2);
-            imagesc(zscore(Xfull(:,1:end-1)));
-            colorbar
-            ax2 = gca;
-            ax2.TickLabelInterpreter = 'none';
-            ax2.XTick = [1:size(DSGN.conditions{run},2)];
-            ax2.XTickLabel = (DSGN.conditions{run});
-            ax2.XTickLabelRotation = 45;
-            ax2.XLabel.String = 'condition';
-            ax2.XLabel.FontSize = 12;
-            ax2.XLabel.FontWeight = 'bold';
-            ax2.YLabel.String = ['#volume (TR = ',num2str(DSGN.tr),' sec)']; 
-            ax2.YLabel.FontSize = 12;
-            ax2.YLabel.FontWeight = 'bold';
-            ax2.FontSize = 11;
-            ax2.Title.FontSize = 14;
-            ax2.Title.String = 'Design matrix';
-            ax2.Title.FontWeight = 'bold';
-            ax2.TitleHorizontalAlignment = 'left';
-
-            sgtitle([derivsubjs{sub},' ',subjrundirnames{run}],'Color','red','FontSize',18, 'FontWeight','bold');
-
-            print(f1,fullfile(runmodeldir,['design_',derivsubjs{sub},'_',subjrundirnames{run},'.png']),'-dpng','-r300');
-
-            clear f1 ax1 ax2
-            
-        end % if loop plotdesign option
-   
-        
-        %% PARAMETRIC MODULATORS IF SPECIFIED
-        
-        % prep work for parametric modulators
-        if isfield(DSGN,'pmods')
-            O.Properties.VariableNames(categorical(O.Properties.VariableNames) == LaBGAS_options.pmods.pmod_name) = {'pmod'};
-            
-            mean_pmod_run = mean(O.pmod,'omitnan'); % this demeans pmods per run rather than condition (as spm does), which may be useful in some cases, see https://www.researchgate.net/post/How_to_define_parametric_modulators_for_multiple_conditions_in_SPM
-                for trial = 1:height(O)
-                    if ~isnan(O.pmod(trial))
-                        O.pmod_demean_run(trial) = O.pmod(trial) - mean_pmod_run;
-                    else
-                        O.pmod_demean_run(trial) = O.pmod(trial);
-                    end
+                if isempty(rundirlist)
+                    copyfile(fullfile(subjderivdir,derivimgs{run}),fullfile(rundir,derivimgs{run}));
+                    gunzip(fullfile(rundir,derivimgs{run}));
+                    delete(fullfile(rundir,derivimgs{run}));
+                elseif ~contains(rundirlist,derivimgs{run})
+                    copyfile(fullfile(subjderivdir,derivimgs{run}),fullfile(rundir,derivimgs{run}));
+                    gunzip(fullfile(rundir,derivimgs{run}));
+                    delete(fullfile(rundir,derivimgs{run}));
                 end
-                
-                clear trial
-                
-                for cond = 1:size(DSGN.pmods{run},2)
-                    mean_pmod_cond{cond} = mean(O.pmod(O.trial_type == DSGN.conditions{run}{cond})); % this demeans pmods per condition, as spm does
-                        for trial = 1:height(O)
-                            if ~isnan(O.pmod(trial))
-                                if O.trial_type(trial) == DSGN.conditions{run}{cond}
-                                    O.pmod_demean_cond(trial) = O.pmod(trial) - mean_pmod_cond{cond};
-                                else
-                                    continue
+
+
+            %% CONFOUND REGRESSOR FILES
+
+            % load confound regressor file generated by fMRIprep into Matlab table
+            % variable
+            Rfull = readtable(fullfile(rundir,fmriprep_noisefiles{run}),'TreatAsEmpty','n/a','FileType', 'text', 'Delimiter', 'tab');
+
+            % replace NaNs in first row with Os
+            wh_replace = ismissing(Rfull(1,:));
+                if any(wh_replace)
+                    Rfull{1, wh_replace} = zeros(1, sum(wh_replace)); % make array of zeros of the right size
+                end
+
+            % calculate and extract confound regressors
+                if strcmpi(LaBGAS_options.mandatory.spike_def,'fMRIprep')==1 % switch would probably make more sense in this case, but this works too!
+
+                    % define regressors in fMRIprep output
+                    regs=Rfull.Properties.VariableNames;
+                    spike_cols = contains(regs,'motion_outlier');
+                    Rspikes=Rfull(:,spike_cols);
+                    Rspikes.spikes=sum(Rspikes{:,1:end},2);
+                    volume_idx = [1:height(Rfull)]; 
+                    spikes = volume_idx(Rspikes.spikes==1);
+
+                    % flag user-specified number of volumes after each spike
+                    % Motion can create artifacts lasting longer than the single image we
+                    % usually account for using spike id scripts. we're also going to flag the
+                    % following TRs, the number of which is defined by the user. If
+                    % 'LaBGAS_options.spikes.spike_additional_vols' remains unspecified, everything will proceed as
+                    % it did before, meaning spikes will be identified and flagged in the
+                    % creation of nuisance regressors without considering the following TRs
+                    % Add them if user requested, for both nuisance_covs and dvars_spikes_regs
+                        if LaBGAS_options.spikes.spike_additional_vols ~= 0
+                            additional_spikes_regs = zeros(height(Rfull),size(spikes,2)*LaBGAS_options.spikes.spike_additional_vols);
+                                % This loop will create a separate column with ones in each row (TR) 
+                                % we would like to consider a nuisance regressor
+                                for spike = 1:size(spikes,2) 
+                                    additional_spikes_regs(spikes(spike)+1 : spikes(spike)+LaBGAS_options.spikes.spike_additional_vols,(spike*LaBGAS_options.spikes.spike_additional_vols-(LaBGAS_options.spikes.spike_additional_vols-1)):(spike*LaBGAS_options.spikes.spike_additional_vols)) = eye(LaBGAS_options.spikes.spike_additional_vols);
                                 end
-                            else
-                                O.pmod_demean_cond(trial) = O.pmod(trial);
-                            end
+                                clear spike
+                            % if any spikes went beyond the end, trim it down
+                            additional_spikes_regs = additional_spikes_regs(1:height(Rfull),:);
+                            % add the additional spikes to the larger matrix
+                            Rfull = [Rfull array2table(additional_spikes_regs)];
                         end
-                        clear trial
+
+                    % remove redundant spike regressors
+                    regs = Rfull.Properties.VariableNames;
+                    spike_cols = contains(regs,'motion_outlier');
+                    additional_spike_cols = contains(regs,'additional_spikes'); 
+                    [duplicate_rows, ~] = find(sum(Rfull{:, spike_cols | additional_spike_cols}, 2)>1);
+                        for row = 1:length(duplicate_rows) % This loop sets duplicate values to zero; drops them later (to keep indices the same during the loop)
+                            [~,curr_cols] = find(Rfull{duplicate_rows(row),:}==1);
+                            Rfull{duplicate_rows(row), curr_cols(2:end)} = 0;
+                        end
+                        clear row
+                    Rfull = Rfull(1:height(Rfull), any(table2array(Rfull)));
+
+                elseif strcmpi(LaBGAS_options.mandatory.spike_def,'CANlab')==1
+
+                    % unzip & define raw image file
+                    gunzip(fullfile(subjBIDSdir,BIDSimgs{run})); % raw images are needed when LaBGAS_options.mandatory.spike_def = CANlab, which calls a function that is incompatible with .nii.gz, hence we unzip
+                    uBIDSimg = dir(fullfile(subjBIDSdir,'*bold.nii'));
+                    uBIDSimg = fullfile(uBIDSimg(:).folder,uBIDSimg(:).name);
+
+                    % add in canlab spike detection (Mahalanobis distance)
+                    cd(rundir);
+                    [~, mahal_spikes, ~, mahal_spikes_regs, ~] = scn_session_spike_id(uBIDSimg, 'doplot', 0); % CANlab function needs to be on your Matlab path
+                    delete('*.img'); % delete implicit mask .hdr/.img files generated by the CANlab function on the line above, since we don't need/use them
+                    delete('*.hdr');
+                    delete('qc_results.yaml');
+                    delete(uBIDSimg); % delete unzipped image since we don't need it anymore and it eats up space
+                    mahal_spikes_regs(:,1) = []; %drop gtrim which is the global signal
+                    Rfull(:,contains(Rfull.Properties.VariableNames,'motion_outlier'))=[]; % drop fmriprep motion outliers since we do not use them when LaBGAS_options.mandatory.spike_def = CANlab, and they cause redundancies
+                    Rfull = [Rfull array2table(mahal_spikes_regs)];
+                    cd(rootdir);
+
+                    % add in dvars spike regressors that are non-redundant with mahal spikes
+                    dvarsZ = [0; zscore(Rfull.dvars(2:end))]; % first element of dvars always = 0, drop it from zscoring and set it to Z=0
+                    dvars_spikes = find(dvarsZ > LaBGAS_options.spikes.dvars_threshold);
+                    same = ismember(dvars_spikes,mahal_spikes);
+                    dvars_spikes(same) = []; % drop the redundant ones
+                    dvars_spikes_regs = zeros(height(Rfull),size(dvars_spikes,1));
+                        for dvar=1:size(dvars_spikes,1)
+                            dvars_spikes_regs(dvars_spikes(dvar),dvar) = 1;
+                        end
+                    Rfull = [Rfull array2table(dvars_spikes_regs)];
+
+                    % flag user-specified number of volumes after each spike
+                    % Motion can create artifacts lasting longer than the single image we
+                    % usually account for using spike id scripts. we're also going to flag the
+                    % following TRs, the number of which is defined by the user. If
+                    % 'LaBGAS_options.spikes.spike_additional_vols' remains unspecified, everything will proceed as
+                    % it did before, meaning spikes will be identified and flagged in the
+                    % creation of nuisance regressors without considering the following TRs
+                    % Add them if user requested, for both nuisance_covs and dvars_spikes_regs
+                        if LaBGAS_options.spikes.spike_additional_vols ~= 0
+                            % concatenate generated spike and DVARS regs. We
+                            % would like to flag subsequent TR's with respect to both of these
+                            % measures.
+                            spikes = [mahal_spikes;dvars_spikes];
+                            additional_spikes_regs = zeros(size(mahal_spikes_regs,1),size(spikes,1)*LaBGAS_options.spikes.spike_additional_vols);
+                                % This loop will create a separate column with ones in each row (TR) 
+                                % we would like to consider a nuisance regressor
+                                % Performs this function for spikes and DVARS. 
+                                for spike = 1:size(spikes,1) 
+                                    additional_spikes_regs(spikes(spike)+1 : spikes(spike)+spike_additional_vols,(spike*spike_additional_vols-(spike_additional_vols-1)):(spike*spike_additional_vols)) = eye(spike_additional_vols);
+                                end
+                                clear spike
+                            % if any spikes went beyond the end, trim it down
+                            additional_spikes_regs = additional_spikes_regs(1:height(Rfull),:);
+                            % add the additional spikes to the larger matrix
+                            Rfull = [Rfull array2table(additional_spikes_regs)];
+                        end
+
+                    % remove redundant spike regressors
+                    regs = Rfull.Properties.VariableNames;
+                    spike_cols = contains(regs,'mahal_spikes'); 
+                    dvars_cols = contains(regs,'dvars_spikes'); 
+                    additional_spike_cols = contains(regs,'additional_spikes'); 
+
+                    [duplicate_rows, ~] = find(sum(Rfull{:, spike_cols | dvars_cols | additional_spike_cols}, 2)>1);
+                    % set duplicate values to zero; drops them later (to keep indices the same during the loop)
+                        for row = 1:size(duplicate_rows,1) 
+                            [~,curr_cols] = find(Rfull{duplicate_rows(row),:}==1);
+                            Rfull{duplicate_rows(row), curr_cols(2:end)} = 0;
+                        end
+                        clear row
+                    Rfull = Rfull(1:size(mahal_spikes_regs,1), any(table2array(Rfull)));
+                else
+                    error('\ninvalid LaBGAS_options.mandatory.spike_def option %s specified in <study_name>_firstlevel_<mx>_s1_options_dsgn_struct.m, please check before proceeding', LaBGAS_options.mandatory.spike_def)
                 end
-                
+
+            % Select confound and spike regressors to return for use in GLM 
+            regsfull = Rfull.Properties.VariableNames;
+            motion_cols = contains(regsfull,'rot') | contains(regsfull,'trans');
+            motion_cols_no_quad = (contains(regsfull,'rot') | contains(regsfull,'trans')) & ~contains(regsfull,'power2');
+            spike_cols = contains(regsfull,'mahal_spikes') | contains(regsfull,'motion_outlier'); 
+            dvars_cols = contains(regsfull,'dvars_spikes'); 
+            additional_spike_cols = contains(regsfull,'additional_spikes'); 
+                if LaBGAS_options.movement_reg_quadratic
+                    Rmotion = Rfull(:,motion_cols);
+                else
+                    Rmotion = Rfull(:,motion_cols_no_quad);
+                end
+            Rspikes = Rfull(:,spike_cols | dvars_cols | additional_spike_cols);
+            Rcsf = table(Rfull.csf,'VariableNames',{'csf'});
+
+            % recalculate derivatives, z-score, and recalculate
+            % quadratics to orthogonalize
+            regsmotion = Rmotion.Properties.VariableNames;
+            regsnot2keep = contains(regsmotion,'derivative') | contains(regsmotion,'power');
+            regsderiv = regsmotion(~contains(regsmotion,'power'));
+            regsderiv = regsderiv(contains(regsderiv,'derivative'));
+            Rmotion = Rmotion(:,~regsnot2keep);
+            deriv = @(x) gradient(x);
+            Rmotionderiv = varfun(deriv,Rmotion);
+                for regderiv = 1:size(Rmotionderiv.Properties.VariableNames,2)
+                    Rmotionderiv.Properties.VariableNames{regderiv} = regsderiv{regderiv};
+                end
+            Rmotionderiv = [Rmotion,Rmotionderiv];
+            regsmotion2 = Rmotionderiv.Properties.VariableNames;
+            zscore = @(x) zscore(x);
+            Rmotionzscore = varfun(deriv,Rmotionderiv);
+                for regz = 1:size(Rmotionzscore.Properties.VariableNames,2)
+                    Rmotionzscore.Properties.VariableNames{regz} = regsmotion2{regz};
+                end
+
+                if LaBGAS_options.movement_reg_quadratic
+                    quad = @(x) x.^ 2;
+                    Rmotionquad = varfun(quad,Rmotionzscore);
+                    Rmotionfinal = [Rmotionzscore,Rmotionquad];
+                else Rmotionfinal = Rmotionzscore;
+                end
+            R = [Rmotionfinal,Rspikes,Rcsf];
+
+            % get row indices for spikes for later use
+            Rspikes.spikes=sum(Rspikes{:,1:end},2);
+            volume_idx = [1:height(Rfull)]; 
+            spikes = volume_idx(Rspikes.spikes==1)';
+
+            % compute and output how many spikes total
+            n_spike_regs = sum(dvars_cols | spike_cols | additional_spike_cols);
+            n_spike_regs_percent = n_spike_regs / height(Rfull);
+
+            % print warning if #volumes identified as spikes exceeds
+            % user-defined threshold
+                if n_spike_regs_percent > LaBGAS_options.mandatory.spikes_percent_threshold
+                    warning('\nnumber of volumes identified as spikes exceeds threshold %s in %s',LaBGAS_options.mandatory.spikes_percent_threshold,subjrunnames{run})
+                end
+
+            % save confound regressors as matrix named R for use in
+            % SPM/CANlab GLM model tools
+            R=table2array(R);
+
+            % define and create subdir for model
+            runmodeldir = fullfile(rundir,DSGN.modelingfilesdir);
+                if ~exist(runmodeldir,'dir')
+                    mkdir(runmodeldir);
+                end
+
+            % write confound regressors
+            filename_noise_regs = fullfile(runmodeldir,DSGN.multireg);
+            save(filename_noise_regs,'R');
+
+            clear Rmotion* Rcsf Rspikes
+
+            %% EVENTS FILES
+
+            % read events.tsv files
+            O = readtable(fullfile(subjBIDSdir,eventsfiles{run}),'FileType', 'text', 'Delimiter', 'tab');
+            O.trial_type = categorical(O.trial_type);
+
+            % sanity check #2: conditions
+            cat_conds = reordercats(categorical(DSGN.conditions{run}));
+            cat_conds = categories(cat_conds);
+            cat_trial_type = cellstr(unique(O.trial_type));
+
+                if ~isequal(cat_trial_type,cat_conds)
+                    error('\nconditions in DSGN structure do not match conditions in %s, please check before proceeding',fmriprep_noisefiles{run})
+                else 
+                    warning('\nconditions in DSGN structure match conditions in %s, continuing',fmriprep_noisefiles{run})
+                end
+
+            % omit trials that coincide with spikes if that option is chosen
+                if strcmpi(LaBGAS_options.mandatory.omit_spike_trials,'yes')==1
+                    same=ismember(O.onset,spikes); % identify trials for which onset coincides with spike
+                    O(same,:)=[]; % get rid of trials coinciding with spikes
+                elseif strcmpi(LaBGAS_options.mandatory.omit_spike_trials,'no')==1
+                else
+                    error('\ninvalid LaBGAS_options.mandatory.omit_spike_trials option %s set in <study_name>_firstlevel_<mx>_s1_options_dsgn_struct.m',LaBGAS_options.mandatory.omit_spike_trials)
+                end
+
+            % initialize structures for conditions
+                for cond = 1:size(DSGN.conditions{1},2)
+                    cond_struct{cond} = struct('name',{DSGN.conditions{run}(cond)}, ...
+                        'onset',{{[]}}, ...
+                        'duration',{{[]}});
+                end
+
                 clear cond
-        
-        % add pmods to structures for conditions of interest
-                for pmod = 1:size(DSGN.pmods{run},2)
-                    cond_struct{pmod}.pmod = struct('name',{DSGN.pmods{run}(pmod)}, ...
-                        'param',{{[]}}, ...
-                        'poly',{{LaBGAS_options.pmods.pmod_polynom}});
-                    pmod_demean_run_struct{pmod}.pmod = struct('name',{strcat(DSGN.pmods{run}(pmod),'_demeaned_run')}, ...
-                        'param',{{[]}}, ...
-                        'poly',{{LaBGAS_options.pmods.pmod_polynom}}); % structure for demeaned pmods per run
-                    pmod_demean_cond_struct{pmod}.pmod = struct('name',{strcat(DSGN.pmods{run}(pmod),'_demeaned_cond')}, ...
-                        'param',{{[]}}, ...
-                        'poly',{{LaBGAS_options.pmods.pmod_polynom}}); % structure for demeaned pmods per condition
-                        if LaBGAS_options.pmods.pmod_ortho_off
-                            cond_struct{pmod}.orth = {[0]};
-                        end
-                end
 
-                clear pmod
-
+            % fill structures with onsets and durations
                 for trial = 1:size(O.trial_type,1)
-                    pmod = 1;
-                    while pmod < size(DSGN.pmods{run},2) + 1
+                    cond = 1;
+                    while cond < size(DSGN.conditions{run},2) + 1
                         switch O.trial_type(trial)
-                            case DSGN.conditions{run}{pmod}
-                               cond_struct{pmod}.pmod.param{1} = [cond_struct{pmod}.pmod.param{1},O.pmod(trial)];
-                               pmod_demean_run_struct{pmod}.pmod.param{1} = [pmod_demean_run_struct{pmod}.pmod.param{1},O.pmod_demean_run(trial)];
-                               pmod_demean_cond_struct{pmod}.pmod.param{1} = [pmod_demean_cond_struct{pmod}.pmod.param{1},O.pmod_demean_cond(trial)];
-                               if LaBGAS_options.pmods.pmod_ortho_off
-                                   cond_struct{pmod}.orth = {[0]};
-                               end
+                            case DSGN.conditions{run}{cond}
+                                    cond_struct{cond}.onset{1} = [cond_struct{cond}.onset{1},O.onset(trial)];
+                                    cond_struct{cond}.duration{1} = [cond_struct{cond}.duration{1},O.duration(trial)];
                         end
-                    pmod = pmod + 1;
+                    cond = cond + 1;
                     end
                     continue
                 end
 
-                clear pmod trial
+                clear trial cond
 
-            % get design matrix and plot
-            
+            % create and plot design including conditions of no interest, and
+            % save figure
+
             if LaBGAS_options.display.plotdesign
-                
-                ons_durs_int = cell(1,size(DSGN.pmods{run},2));
-                pmods_raw = cell(1,size(DSGN.pmods{run},2));
-                pmods_demean_run = cell(1,size(DSGN.pmods{run},2));
-                pmods_demean_cond = cell(1,size(DSGN.pmods{run},2));
-                    for cond = 1:size(DSGN.pmods{run},2)
-                            ons_durs_int{cond}(:,1) = cond_struct{cond}.onset{1};
-                            ons_durs_int{cond}(:,2) = cond_struct{cond}.duration{1};
-                            pmods_raw{cond}(:,1) = cond_struct{cond}.pmod.param{1};
-                            pmods_demean_run{cond}(:,1) = pmod_demean_run_struct{cond}.pmod.param{1};
-                            pmods_demean_cond{cond}(:,1) = pmod_demean_cond_struct{cond}.pmod.param{1};
+
+                nii = dir(fullfile(rundir,'*.nii')).name;
+                nii_hdr = read_hdr(fullfile(rundir,nii)); % reads Nifti header of smoothed image into a structure
+
+                    if isfield(DSGN,'convolution')
+                        switch DSGN.convolution.type
+                            case 'hrf'
+                                if DSGN.convolution.time == 0
+                                    hrf_name = spm_hrf(1);
+                                elseif DSGN.convolution.time == 1
+                                    if DSGN.convolution.dispersion == 0
+                                        hrf_name = 'hrf (with time derivative)';
+                                    elseif DSGN.convolution.dispersion == 1
+                                        hrf_name = 'hrf (with time and dispersion derivatives)';
+                                    else
+                                        error('\nUnrecognized convolution type: %s',DSGN.convolution.dispersion)
+                                    end
+                                else
+                                   error('\nUnrecognized convolution type: %s',DSGN.convolution.type)
+                                end
+                            case 'fir'
+                                hrf_name = 'Finite Impulse Response';
+                            otherwise
+                                error('\nUnrecognized convolution type: %s',DSGN.convolution.type)
+                        end
+                    else
+                        hrf_name = spm_hrf(1);
+                    end                                
+
+                ons_durs = cell(1,size(cat_trial_type,1));
+
+                    for cond = 1:size(DSGN.conditions{run},2)
+                        ons_durs{cond}(:,1) = cond_struct{1,cond}.onset{1};
+                        ons_durs{cond}(:,2) = cond_struct{1,cond}.duration{1};
                     end
 
                     clear cond
 
-                    switch LaBGAS_options.pmods.pmod_type
-                        case 'parametric_singleregressor'
-                            [X_pmod_raw,~,~,hrf_pmod_raw] = onsets2fmridesign(ons_durs_int,DSGN.tr,nii_hdr.tdim .*DSGN.tr, hrf_name,'parametric_singleregressor',pmods_raw);
+                [Xfull,~,~,hrf_full] = onsets2fmridesign(ons_durs,DSGN.tr,nii_hdr.tdim .*DSGN.tr, hrf_name);    
 
-                            f2 = figure('WindowState','maximized');
+                f1 = figure('WindowState','maximized');
 
-                            colors = get(gcf, 'DefaultAxesColorOrder');
-                            colors = mat2cell(colors, ones(size(colors, 1), 1), 3);
+                subplot(2,1,1);
+                plotDesign(ons_durs,[],DSGN.tr,'samefig','basisset',hrf_name);
+                ax1 = gca;
+                ax1.TickLabelInterpreter = 'none';
+                ax1.YTick = [1:size(DSGN.conditions{run},2)];
+                ax1.YTickLabel = (DSGN.conditions{run});
+                ax1.YLabel.String = 'condition';
+                ax1.YLabel.FontSize = 12;
+                ax1.YLabel.FontWeight = 'bold';
+                ax1.XLabel.FontSize = 12;
+                ax1.XLabel.FontWeight = 'bold';
+                ax1.FontSize = 11;
+                ax1.Title.FontSize = 14;
+                ax1.Title.FontWeight = 'bold';
+                ax1.TitleHorizontalAlignment = 'left';
 
-                            subplot(2,1,1);
-                            plot_matrix_cols(zscore(X_pmod_raw(:,1:end-1)),'horizontal',[],colors,3,[0 nii_hdr.tdim]);
-                            ax1 = gca;
-                            ax1.TickLabelInterpreter = 'none';
-                            ax1.YTick = [1:size(DSGN.pmods{run},2)];
-                            ax1.YTickLabel = DSGN.pmods{run};
-                            ax1.YLabel.String = 'condition';
-                            ax1.YLabel.FontSize = 12;
-                            ax1.YLabel.FontWeight = 'bold';
-                            ax1.XLabel.String = ['#volume (TR = ',num2str(DSGN.tr),' sec)']; 
-                            ax1.XLabel.FontSize = 12;
-                            ax1.XLabel.FontWeight = 'bold';
-                            ax1.XLim = [0 (nii_hdr.tdim + 2)];
-                            ax1.FontSize = 11;
-                            ax1.Title.String = 'Predicted activity';
-                            ax1.Title.FontSize = 14;
-                            ax1.Title.FontWeight = 'bold';
-                            ax1.TitleHorizontalAlignment = 'left';
+                subplot(2,1,2);
+                imagesc(zscore(Xfull(:,1:end-1)));
+                colorbar
+                ax2 = gca;
+                ax2.TickLabelInterpreter = 'none';
+                ax2.XTick = [1:size(DSGN.conditions{run},2)];
+                ax2.XTickLabel = (DSGN.conditions{run});
+                ax2.XTickLabelRotation = 45;
+                ax2.XLabel.String = 'condition';
+                ax2.XLabel.FontSize = 12;
+                ax2.XLabel.FontWeight = 'bold';
+                ax2.YLabel.String = ['#volume (TR = ',num2str(DSGN.tr),' sec)']; 
+                ax2.YLabel.FontSize = 12;
+                ax2.YLabel.FontWeight = 'bold';
+                ax2.FontSize = 11;
+                ax2.Title.FontSize = 14;
+                ax2.Title.String = 'Design matrix';
+                ax2.Title.FontWeight = 'bold';
+                ax2.TitleHorizontalAlignment = 'left';
 
-                            subplot(2,1,2);
-                            imagesc(zscore(X_pmod_raw(:,1:end-1)));
-                            colorbar
-                            ax2 = gca;
-                            ax2.TickLabelInterpreter = 'none';
-                            ax2.XTick = [1:size(DSGN.pmods{run},2)];
-                            ax2.XTickLabel = (DSGN.pmods{run});
-                            ax2.XTickLabelRotation = 45;
-                            ax2.XLabel.String = 'condition';
-                            ax2.XLabel.FontSize = 12;
-                            ax2.XLabel.FontWeight = 'bold';
-                            ax2.YLabel.String = ['#volume (TR = ',num2str(DSGN.tr),' sec)']; 
-                            ax2.YLabel.FontSize = 12;
-                            ax2.YLabel.FontWeight = 'bold';
-                            ax2.FontSize = 11;
-                            ax2.Title.FontSize = 14;
-                            ax2.Title.String = 'Design matrix';
-                            ax2.Title.FontWeight = 'bold';
-                            ax2.TitleHorizontalAlignment = 'left';
+                sgtitle([derivsubjs{sub},' ',subjrundirnames{run}],'Color','red','FontSize',18, 'FontWeight','bold');
 
-                            sgtitle([derivsubjs{sub},' ',subjrundirnames{run}],'Color','red','FontSize',18, 'FontWeight','bold');
+                print(f1,fullfile(runmodeldir,['design_',derivsubjs{sub},'_',subjrundirnames{run},'.png']),'-dpng','-r300');
 
-                            print(f2,fullfile(runmodeldir,['design_',LaBGAS_options.pmods.pmod_type,'_',derivsubjs{sub},'_',subjrundirnames{run},'.png']),'-dpng','-r300');
+                clear f1 ax1 ax2
 
-                            clear f2 ax1 ax2
+            end % if loop plotdesign option
 
-                        case 'parametric_standard'
-                            [X_unmod,delta_unmod,delta_hires_unmod,hrf_unmod] = onsets2fmridesign(ons_durs_int,DSGN.tr,nii_hdr.tdim .*DSGN.tr, hrf_name);  
-                            [X_pmod_run,delta,delta_hires,hrf_pmod] = onsets2fmridesign(ons_durs_int,DSGN.tr,nii_hdr.tdim .*DSGN.tr, hrf_name,'parametric_singleregressor',pmods_demean_cond); % unclear what to add as first column in matrix following 'parametric_standard' option
 
-                            f2 = figure('WindowState','maximized');
+            %% PARAMETRIC MODULATORS IF SPECIFIED
 
-                            colors = get(gcf, 'DefaultAxesColorOrder');
-                            colors = mat2cell(colors, ones(size(colors, 1), 1), 3);
+            % prep work for parametric modulators
+            if isfield(DSGN,'pmods')
+                O.Properties.VariableNames(categorical(O.Properties.VariableNames) == LaBGAS_options.pmods.pmod_name) = {'pmod'};
 
-                            subplot(2,2,[1 2]);
-                            l1 = plot_matrix_cols(zscore(X_unmod(:,1:end-1)),'horizontal',[],colors,3,[0 nii_hdr.tdim]);
-                            ax1 = gca;
-                            ax1.TickLabelInterpreter = 'none';
-                            ax1.YTick = [1:size(DSGN.pmods{run},2)];
-                            ax1.YTickLabel = DSGN.conditions{run}(1:size(DSGN.pmods{run},2));
-                            ax1.YLabel.String = 'condition';
-                            ax1.YLabel.FontSize = 12;
-                            ax1.YLabel.FontWeight = 'bold';
-                            ax1.XLabel.String = ['#volume (TR = ',num2str(DSGN.tr),' sec)']; 
-                            ax1.XLabel.FontSize = 12;
-                            ax1.XLabel.FontWeight = 'bold';
-                            ax1.XLim = [0 (nii_hdr.tdim + 2)];
-                            ax1.FontSize = 11;
-                            ax1.Title.String = 'Predicted activity';
-                            ax1.Title.FontSize = 14;
-                            ax1.Title.FontWeight = 'bold';
-                            ax1.TitleHorizontalAlignment = 'left';
+                mean_pmod_run = mean(O.pmod,'omitnan'); % this demeans pmods per run rather than condition (as spm does), which may be useful in some cases, see https://www.researchgate.net/post/How_to_define_parametric_modulators_for_multiple_conditions_in_SPM
+                    for trial = 1:height(O)
+                        if ~isnan(O.pmod(trial))
+                            O.pmod_demean_run(trial) = O.pmod(trial) - mean_pmod_run;
+                        else
+                            O.pmod_demean_run(trial) = O.pmod(trial);
+                        end
+                    end
 
-                            hold on
+                    clear trial
 
-                            l2 = plot_matrix_cols(zscore(X_pmod_run(:,1:end-1)),'horizontal',[],colors,1.5,[0 nii_hdr.tdim]);
-                             for line = 1:size(l2,2)
-                                 l2(line).LineStyle = '--';
-                             end
+                    for cond = 1:size(DSGN.pmods{run},2)
+                        mean_pmod_cond{cond} = mean(O.pmod(O.trial_type == DSGN.conditions{run}{cond})); % this demeans pmods per condition, as spm does
+                            for trial = 1:height(O)
+                                if ~isnan(O.pmod(trial))
+                                    if O.trial_type(trial) == DSGN.conditions{run}{cond}
+                                        O.pmod_demean_cond(trial) = O.pmod(trial) - mean_pmod_cond{cond};
+                                    else
+                                        continue
+                                    end
+                                else
+                                    O.pmod_demean_cond(trial) = O.pmod(trial);
+                                end
+                            end
+                            clear trial
+                    end
 
-                            hold off
+                    clear cond
 
-                            subplot(2,2,3);
-                            imagesc(zscore(X_unmod(:,1:end-1)));
-                            colorbar
-                            ax2 = gca;
-                            ax2.TickLabelInterpreter = 'none';
-                            ax2.XTick = [1:size(DSGN.pmods{run},2)];
-                            ax2.XTickLabel = DSGN.conditions{run}(1:size(DSGN.pmods{run},2));
-                            ax2.XTickLabelRotation = 45;
-                            ax2.XLabel.String = 'condition';
-                            ax2.XLabel.FontSize = 12;
-                            ax2.XLabel.FontWeight = 'bold';
-                            ax2.YLabel.String = ['#volume (TR = ',num2str(DSGN.tr),' sec)']; 
-                            ax2.YLabel.FontSize = 12;
-                            ax2.YLabel.FontWeight = 'bold';
-                            ax2.FontSize = 11;
-                            ax2.Title.FontSize = 14;
-                            ax2.Title.String = 'Design matrix unmodulated';
-                            ax2.Title.FontWeight = 'bold';
-                            ax2.TitleHorizontalAlignment = 'left';
+            % add pmods to structures for conditions of interest
+                    for pmod = 1:size(DSGN.pmods{run},2)
+                        cond_struct{pmod}.pmod = struct('name',{DSGN.pmods{run}(pmod)}, ...
+                            'param',{{[]}}, ...
+                            'poly',{{LaBGAS_options.pmods.pmod_polynom}});
+                        pmod_demean_run_struct{pmod}.pmod = struct('name',{strcat(DSGN.pmods{run}(pmod),'_demeaned_run')}, ...
+                            'param',{{[]}}, ...
+                            'poly',{{LaBGAS_options.pmods.pmod_polynom}}); % structure for demeaned pmods per run
+                        pmod_demean_cond_struct{pmod}.pmod = struct('name',{strcat(DSGN.pmods{run}(pmod),'_demeaned_cond')}, ...
+                            'param',{{[]}}, ...
+                            'poly',{{LaBGAS_options.pmods.pmod_polynom}}); % structure for demeaned pmods per condition
+                            if LaBGAS_options.pmods.pmod_ortho_off
+                                cond_struct{pmod}.orth = {[0]};
+                            end
+                    end
 
-                            subplot(2,2,4);
-                            imagesc(zscore(X_pmod_run(:,1:end-1)));
-                            colorbar
-                            ax3 = gca;
-                            ax3.TickLabelInterpreter = 'none';
-                            ax3.XTick = [1:size(DSGN.pmods{run},2)];
-                            ax3.XTickLabel = DSGN.pmods{run};
-                            ax3.XTickLabelRotation = 45;
-                            ax3.XLabel.String = 'condition';
-                            ax3.XLabel.FontSize = 12;
-                            ax3.XLabel.FontWeight = 'bold';
-                            ax3.YLabel.String = ['#volume (TR = ',num2str(DSGN.tr),' sec)']; 
-                            ax3.YLabel.FontSize = 12;
-                            ax3.YLabel.FontWeight = 'bold';
-                            ax3.FontSize = 11;
-                            ax3.Title.FontSize = 14;
-                            ax3.Title.String = 'Design matrix modulated';
-                            ax3.Title.FontWeight = 'bold';
-                            ax3.TitleHorizontalAlignment = 'left';
+                    clear pmod
 
-                            sgtitle([derivsubjs{sub},' ',subjrundirnames{run}],'Color','red','FontSize',18, 'FontWeight','bold');
+                    for trial = 1:size(O.trial_type,1)
+                        pmod = 1;
+                        while pmod < size(DSGN.pmods{run},2) + 1
+                            switch O.trial_type(trial)
+                                case DSGN.conditions{run}{pmod}
+                                   cond_struct{pmod}.pmod.param{1} = [cond_struct{pmod}.pmod.param{1},O.pmod(trial)];
+                                   pmod_demean_run_struct{pmod}.pmod.param{1} = [pmod_demean_run_struct{pmod}.pmod.param{1},O.pmod_demean_run(trial)];
+                                   pmod_demean_cond_struct{pmod}.pmod.param{1} = [pmod_demean_cond_struct{pmod}.pmod.param{1},O.pmod_demean_cond(trial)];
+                                   if LaBGAS_options.pmods.pmod_ortho_off
+                                       cond_struct{pmod}.orth = {[0]};
+                                   end
+                            end
+                        pmod = pmod + 1;
+                        end
+                        continue
+                    end
 
-                            print(f2,fullfile(runmodeldir,['design_',LaBGAS_options.pmods.pmod_type,'_',derivsubjs{sub},'_',subjrundirnames{run},'.png']),'-dpng','-r300');
+                    clear pmod trial
 
-                            clear f2 ax1 ax2 ax3 l1 l2
+                % get design matrix and plot
 
-                        otherwise
-                            error('\nInvalid LaBGAS_options.pmods.pmod_type option %s specified in <study_name>_firstlevel_<mx>_s1_options_dsgn_struct, please check before proceeding',LaBGAS_options.pmods.pmod_type)
-                    
-                    end % switch pmod_type
-                    
-            end % if loop plotdesign
+                if LaBGAS_options.display.plotdesign
+
+                    ons_durs_int = cell(1,size(DSGN.pmods{run},2));
+                    pmods_raw = cell(1,size(DSGN.pmods{run},2));
+                    pmods_demean_run = cell(1,size(DSGN.pmods{run},2));
+                    pmods_demean_cond = cell(1,size(DSGN.pmods{run},2));
+                        for cond = 1:size(DSGN.pmods{run},2)
+                                ons_durs_int{cond}(:,1) = cond_struct{cond}.onset{1};
+                                ons_durs_int{cond}(:,2) = cond_struct{cond}.duration{1};
+                                pmods_raw{cond}(:,1) = cond_struct{cond}.pmod.param{1};
+                                pmods_demean_run{cond}(:,1) = pmod_demean_run_struct{cond}.pmod.param{1};
+                                pmods_demean_cond{cond}(:,1) = pmod_demean_cond_struct{cond}.pmod.param{1};
+                        end
+
+                        clear cond
+
+                        switch LaBGAS_options.pmods.pmod_type
+                            case 'parametric_singleregressor'
+                                [X_pmod_raw,~,~,hrf_pmod_raw] = onsets2fmridesign(ons_durs_int,DSGN.tr,nii_hdr.tdim .*DSGN.tr, hrf_name,'parametric_singleregressor',pmods_raw);
+
+                                f2 = figure('WindowState','maximized');
+
+                                colors = get(gcf, 'DefaultAxesColorOrder');
+                                colors = mat2cell(colors, ones(size(colors, 1), 1), 3);
+
+                                subplot(2,1,1);
+                                plot_matrix_cols(zscore(X_pmod_raw(:,1:end-1)),'horizontal',[],colors,3,[0 nii_hdr.tdim]);
+                                ax1 = gca;
+                                ax1.TickLabelInterpreter = 'none';
+                                ax1.YTick = [1:size(DSGN.pmods{run},2)];
+                                ax1.YTickLabel = DSGN.pmods{run};
+                                ax1.YLabel.String = 'condition';
+                                ax1.YLabel.FontSize = 12;
+                                ax1.YLabel.FontWeight = 'bold';
+                                ax1.XLabel.String = ['#volume (TR = ',num2str(DSGN.tr),' sec)']; 
+                                ax1.XLabel.FontSize = 12;
+                                ax1.XLabel.FontWeight = 'bold';
+                                ax1.XLim = [0 (nii_hdr.tdim + 2)];
+                                ax1.FontSize = 11;
+                                ax1.Title.String = 'Predicted activity';
+                                ax1.Title.FontSize = 14;
+                                ax1.Title.FontWeight = 'bold';
+                                ax1.TitleHorizontalAlignment = 'left';
+
+                                subplot(2,1,2);
+                                imagesc(zscore(X_pmod_raw(:,1:end-1)));
+                                colorbar
+                                ax2 = gca;
+                                ax2.TickLabelInterpreter = 'none';
+                                ax2.XTick = [1:size(DSGN.pmods{run},2)];
+                                ax2.XTickLabel = (DSGN.pmods{run});
+                                ax2.XTickLabelRotation = 45;
+                                ax2.XLabel.String = 'condition';
+                                ax2.XLabel.FontSize = 12;
+                                ax2.XLabel.FontWeight = 'bold';
+                                ax2.YLabel.String = ['#volume (TR = ',num2str(DSGN.tr),' sec)']; 
+                                ax2.YLabel.FontSize = 12;
+                                ax2.YLabel.FontWeight = 'bold';
+                                ax2.FontSize = 11;
+                                ax2.Title.FontSize = 14;
+                                ax2.Title.String = 'Design matrix';
+                                ax2.Title.FontWeight = 'bold';
+                                ax2.TitleHorizontalAlignment = 'left';
+
+                                sgtitle([derivsubjs{sub},' ',subjrundirnames{run}],'Color','red','FontSize',18, 'FontWeight','bold');
+
+                                print(f2,fullfile(runmodeldir,['design_',LaBGAS_options.pmods.pmod_type,'_',derivsubjs{sub},'_',subjrundirnames{run},'.png']),'-dpng','-r300');
+
+                                clear f2 ax1 ax2
+
+                            case 'parametric_standard'
+                                [X_unmod,delta_unmod,delta_hires_unmod,hrf_unmod] = onsets2fmridesign(ons_durs_int,DSGN.tr,nii_hdr.tdim .*DSGN.tr, hrf_name);  
+                                [X_pmod_run,delta,delta_hires,hrf_pmod] = onsets2fmridesign(ons_durs_int,DSGN.tr,nii_hdr.tdim .*DSGN.tr, hrf_name,'parametric_singleregressor',pmods_demean_cond); % unclear what to add as first column in matrix following 'parametric_standard' option
+
+                                f2 = figure('WindowState','maximized');
+
+                                colors = get(gcf, 'DefaultAxesColorOrder');
+                                colors = mat2cell(colors, ones(size(colors, 1), 1), 3);
+
+                                subplot(2,2,[1 2]);
+                                l1 = plot_matrix_cols(zscore(X_unmod(:,1:end-1)),'horizontal',[],colors,3,[0 nii_hdr.tdim]);
+                                ax1 = gca;
+                                ax1.TickLabelInterpreter = 'none';
+                                ax1.YTick = [1:size(DSGN.pmods{run},2)];
+                                ax1.YTickLabel = DSGN.conditions{run}(1:size(DSGN.pmods{run},2));
+                                ax1.YLabel.String = 'condition';
+                                ax1.YLabel.FontSize = 12;
+                                ax1.YLabel.FontWeight = 'bold';
+                                ax1.XLabel.String = ['#volume (TR = ',num2str(DSGN.tr),' sec)']; 
+                                ax1.XLabel.FontSize = 12;
+                                ax1.XLabel.FontWeight = 'bold';
+                                ax1.XLim = [0 (nii_hdr.tdim + 2)];
+                                ax1.FontSize = 11;
+                                ax1.Title.String = 'Predicted activity';
+                                ax1.Title.FontSize = 14;
+                                ax1.Title.FontWeight = 'bold';
+                                ax1.TitleHorizontalAlignment = 'left';
+
+                                hold on
+
+                                l2 = plot_matrix_cols(zscore(X_pmod_run(:,1:end-1)),'horizontal',[],colors,1.5,[0 nii_hdr.tdim]);
+                                 for line = 1:size(l2,2)
+                                     l2(line).LineStyle = '--';
+                                 end
+
+                                hold off
+
+                                subplot(2,2,3);
+                                imagesc(zscore(X_unmod(:,1:end-1)));
+                                colorbar
+                                ax2 = gca;
+                                ax2.TickLabelInterpreter = 'none';
+                                ax2.XTick = [1:size(DSGN.pmods{run},2)];
+                                ax2.XTickLabel = DSGN.conditions{run}(1:size(DSGN.pmods{run},2));
+                                ax2.XTickLabelRotation = 45;
+                                ax2.XLabel.String = 'condition';
+                                ax2.XLabel.FontSize = 12;
+                                ax2.XLabel.FontWeight = 'bold';
+                                ax2.YLabel.String = ['#volume (TR = ',num2str(DSGN.tr),' sec)']; 
+                                ax2.YLabel.FontSize = 12;
+                                ax2.YLabel.FontWeight = 'bold';
+                                ax2.FontSize = 11;
+                                ax2.Title.FontSize = 14;
+                                ax2.Title.String = 'Design matrix unmodulated';
+                                ax2.Title.FontWeight = 'bold';
+                                ax2.TitleHorizontalAlignment = 'left';
+
+                                subplot(2,2,4);
+                                imagesc(zscore(X_pmod_run(:,1:end-1)));
+                                colorbar
+                                ax3 = gca;
+                                ax3.TickLabelInterpreter = 'none';
+                                ax3.XTick = [1:size(DSGN.pmods{run},2)];
+                                ax3.XTickLabel = DSGN.pmods{run};
+                                ax3.XTickLabelRotation = 45;
+                                ax3.XLabel.String = 'condition';
+                                ax3.XLabel.FontSize = 12;
+                                ax3.XLabel.FontWeight = 'bold';
+                                ax3.YLabel.String = ['#volume (TR = ',num2str(DSGN.tr),' sec)']; 
+                                ax3.YLabel.FontSize = 12;
+                                ax3.YLabel.FontWeight = 'bold';
+                                ax3.FontSize = 11;
+                                ax3.Title.FontSize = 14;
+                                ax3.Title.String = 'Design matrix modulated';
+                                ax3.Title.FontWeight = 'bold';
+                                ax3.TitleHorizontalAlignment = 'left';
+
+                                sgtitle([derivsubjs{sub},' ',subjrundirnames{run}],'Color','red','FontSize',18, 'FontWeight','bold');
+
+                                print(f2,fullfile(runmodeldir,['design_',LaBGAS_options.pmods.pmod_type,'_',derivsubjs{sub},'_',subjrundirnames{run},'.png']),'-dpng','-r300');
+
+                                clear f2 ax1 ax2 ax3 l1 l2
+
+                            otherwise
+                                error('\nInvalid LaBGAS_options.pmods.pmod_type option %s specified in <study_name>_firstlevel_<mx>_s1_options_dsgn_struct, please check before proceeding',LaBGAS_options.pmods.pmod_type)
+
+                        end % switch pmod_type
+
+                end % if loop plotdesign
+
+            end % if loop pmods
+
+
+            %% SAVE DESIGN FILES
+
+            for cond = 1:size(DSGN.conditions{1},2)
+                struct = cond_struct{cond};
+                save(fullfile(runmodeldir,char(cond_struct{cond}.name)),'-struct','struct');
+                clear struct
+            end
+
+            clear cond
+
+
+        end % for loop over runs if nr_sess = 1
+    
+    
+    else % need a smart solution here to put runs of two sessions in one design matrix - probably easiest to keep sessions and runs as separate loops, but add nr_runs_sess{1}1 to index in sess2?
+        
+        %% LOOP OVER SESSIONS
+        
+        for ses = 1:nr_sess
+            
+            %% DEFINE SUBJECT LEVEL DIRS & FILENAMES
+            
+            subjderivdir = fullfile(derivsubjdirs{sub},['ses-' num2str(ses)],'func');
+            subjBIDSdir = fullfile(BIDSsubjdirs{sub},['ses-' num2str(ses)],'func');
+            subjfirstdir = firstsubjdirs{sub};
+
+            BIDSimgs = dir(fullfile(subjBIDSdir,['*' tasknames{1} '*bold.nii.gz']));
+            BIDSimgs = {BIDSimgs(:).name}';
+            BIDSidx = ~contains(BIDSimgs,'rest'); % omit resting state scan if it exists
+            BIDSimgs = {BIDSimgs{BIDSidx}}';
+
+            derivimgs = dir(fullfile(subjderivdir,['s6*' char(tasknames_fmriprep(1,:)) '*.nii.gz'])); % change to tasknames{1} if you don't have _ in your taskname
+            derivimgs = {derivimgs(:).name}';
+            derividx = ~contains(derivimgs,'rest'); % omit resting state scan if it exists
+            derivimgs = {derivimgs{derividx}}';
+
+            fmriprep_noisefiles = dir(fullfile(subjderivdir,['*' char(tasknames_fmriprep(1,:)) '*desc-confounds_timeseries.tsv'])); % change to tasknames{1} if you don't have _ in your taskname
+            fmriprep_noisefiles = {fmriprep_noisefiles(:).name}';
+            noiseidx = ~contains(fmriprep_noisefiles,'rest'); % omit resting state scan if it exists
+            fmriprep_noisefiles = {fmriprep_noisefiles{noiseidx}}';
+
+            % read events.tsv files with onsets, durations, and trial type
+            eventsfiles = dir(fullfile(subjBIDSdir,['*' tasknames{1} '*events.tsv']));
+            eventsfiles = {eventsfiles(:).name}';
+
+                for runname = 1:size(fmriprep_noisefiles,1)
+                    subjrunnames{runname} = strsplit(fmriprep_noisefiles{runname},'_desc');
+                    subjrunnames{runname} = subjrunnames{runname}{1};
+                    if size(tasknames,1) == 1
+                        subjrundirnames{runname} = subjrunnames{runname}(end-4:end);
+                    else
+                        subjrundirnames{runname} = [subjrunnames{runname}(end-4:end) '_' char(tasknames_fmriprep(1,:))]; % change to tasknames{1} if you don't have _ in your taskname
+                    end
+                end
+
+            subjrunnames = subjrunnames';
+            subjrundirnames = subjrundirnames';
+
+            % create rundirs in subjderivdir if needed
+                if ~isfolder(fullfile(subjderivdir,rundirnames{1}))
+                    cd(subjderivdir);
+                    cellfun(sm,rundirnames);
+                end
+    
+            % sanity check #1: number of images & noise/event files
+                if ~isequal(size(BIDSimgs,1),size(derivimgs,1),size(fmriprep_noisefiles,1),size(eventsfiles,1)) 
+                    error('\nnumbers of raw images, preprocessed images, noise, and events files do not match for %s ses-%s, please check BIDSimgs, derivimgs, fmriprep_noisefiles, and eventsfiles variables before proceeding',derivsubjs{sub}, num2str(ses));
+                else
+                    warning('\nnumbers of raw images, preprocessed images, noise, and events files match for %s ses-%s, continuing',derivsubjs{sub},num2str(ses));
+                end
                 
-        end % if loop pmods
+            cd(rootdir);
+            
+            nr_runs{ses} = size(fmriprep_noisefiles,1);
 
+            %% LOOP OVER RUNS: CREATE NOISE REGRESSORS, ONSETS, DURATIONS, AND PARAMETRIC MODULATORS
+    
+            for run=1:nr_runs{ses}
+
+                %% PREP WORK
+
+                % define subdir for this run
+                rundir = fullfile(subjderivdir,subjrundirnames{run});
+
+                % move fmriprep noisefile and smoothed image into subdir if needed
+                rundirlist = dir(rundir);
+                rundirlist = [rundirlist(:).name];
+                    if isempty(rundirlist)
+                        copyfile(fullfile(subjderivdir,fmriprep_noisefiles{run}),fullfile(rundir,fmriprep_noisefiles{run}));
+                    elseif ~contains(rundirlist,fmriprep_noisefiles{run})
+                        copyfile(fullfile(subjderivdir,fmriprep_noisefiles{run}),fullfile(rundir,fmriprep_noisefiles{run}));
+                    end
+
+                    if isempty(rundirlist)
+                        copyfile(fullfile(subjderivdir,derivimgs{run}),fullfile(rundir,derivimgs{run}));
+                        gunzip(fullfile(rundir,derivimgs{run}));
+                        delete(fullfile(rundir,derivimgs{run}));
+                    elseif ~contains(rundirlist,derivimgs{run})
+                        copyfile(fullfile(subjderivdir,derivimgs{run}),fullfile(rundir,derivimgs{run}));
+                        gunzip(fullfile(rundir,derivimgs{run}));
+                        delete(fullfile(rundir,derivimgs{run}));
+                    end
+                    
+                % CONTINUE HERE WITH CONFOUND REGRESSOR FILE SECTION
+
+            end % for loop runs
+            
+        end % for loop sessions 
         
-        %% SAVE DESIGN FILES
-        
-        for cond = 1:size(DSGN.conditions{1},2)
-            struct = cond_struct{cond};
-            save(fullfile(runmodeldir,char(cond_struct{cond}.name)),'-struct','struct');
-            clear struct
-        end
-        
-        clear cond
-      
-        
-    end % for loop runs
+    end % if loop nr_sess
     
     
     %% FIT FIRST LEVEL MODEL

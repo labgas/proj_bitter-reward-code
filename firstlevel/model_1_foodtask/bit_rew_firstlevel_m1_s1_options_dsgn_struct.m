@@ -233,17 +233,27 @@ bit_rew_prep_s0_define_directories;
 
 % define run directory names
 % STUDY-SPECIFIC: names are defaults, only change number
+% NOTE: if you only have one task, use 'run-1', 'run-2', etc
+%       if you have more than one task, use one model/script per task, and
+%       add _<taskname> (as in your filenames in derivdir) to rundirnames
 
-rundirnames = {'run-1_task-food';'run-2_task-food'};
+rundirnames = {'run-1_food';'run-2_food'};
 
 % set number of sessions
 
-nr_sess = 2; % comment out if you do not have sessions
+nr_sess = 2;
+
+% define tasknames (as in BIDS-compliant naming of your functional files in BIDSdir)
+
+tasknames = {'food_images';'FID'};
 
 % define rootdir for Github repos
 % MACHINE-SPECIFIC: change to your local path if not working on LaBGAS server
 
 githubrootdir = '/data/master_github_repos';
+
+% split taskname if there is an underscore in it
+tasknames_fmriprep = split(string(tasknames{1}),'_'); % fmriprep seems to cut off part of taskname after _, hence no use of underscores in tasknames in the future, then this can be omitted and code below changed
 
 
 %% CREATE CANLAB DSGN STRUCTURE
@@ -252,7 +262,7 @@ githubrootdir = '/data/master_github_repos';
     
     % REQUIRED FIELDS
     DSGN.metadata = "proj-bitter-reward first level analysis model with food images task, i.e. modeling 4 conditions for low calorie images, high calorie images, neutral images and rest as blocks"; % field for annotation with study info, or whatever you like
-    DSGN.modeldir = '/data/proj_bitter-reward/firstlevel/model_1_foodtask'; % directory where you want to write first level results for this model
+    DSGN.modeldir = '/data/proj_bitter-reward/firstlevel/model_1_food_images'; % directory where you want to write first level results for this model
         if ~isfield(LaBGAS_options,'subjs2analyze')
             DSGN.subjects = derivsubjdirs';
         elseif ~isempty(LaBGAS_options.subjs2analyze)
@@ -268,10 +278,10 @@ githubrootdir = '/data/master_github_repos';
         else
             DSGN.subjects = derivsubjdirs';
         end
-    DSGN.funcnames = {'/ses-1/func/s6-*ses-1_task-food_run-1.nii',...
-        '/ses-1/func/s6-*ses-1_task-food_run-2.nii',...
-        '/ses-2/func/s6-*ses-2_task-food_run-1.nii',...
-        '/ses-2/func/s6-*ses-2_task-food_run-2.nii'}; % cell array (one cell per session) of paths to functional files, relative to absolute path specific in DSGN.subjects
+    DSGN.funcnames = {['/ses-1/func/s6*ses-1*' char(tasknames_fmriprep(1,:)) '*run-1.nii'],...
+        ['/ses-1/func/s6*ses-1*' char(tasknames_fmriprep(1,:)) '*run-2.nii'],...
+        ['/ses-2/func/s6*ses-2*' char(tasknames_fmriprep(1,:)) '*run-1.nii'],...
+        ['/ses-2/func/s6*ses-2*' char(tasknames_fmriprep(1,:)) '*run-2.nii']}; % cell array (one cell per session) of paths to functional files, relative to absolute path specific in DSGN.subjects
    
     % OPTIONAL FIELDS
 %     DSGN.concatenation = {[1:6]}; % default: none; cell array of arrays of runs to concatenate; see documentation for when to concatenate, and how it works exactly
@@ -318,7 +328,7 @@ githubrootdir = '/data/master_github_repos';
     DSGN.notimemod = true; % default: false; if true, turn off time modulation of conditions, i.e. when you do not expect linear trends over time
 %     DSGN.singletrials = {{}}; % a cell array (1 cell per session) of cell arrays (1 cell per condition) of (corresponding to DSGN.conditions) of true/false values indicating whether to convert specified condition to set of single trial conditions
 %     DSGN.singletrialsall = false; % default: false; if true, set DSGN.singletrials to true for all conditions
-    DSGN.modelingfilesdir = 'model_1_conds_pmods'; % name of subfolder which will be created within directory containing functional files where .mat files containing fields of DSGN structure will be saved
+    DSGN.modelingfilesdir = 'model_1_food_images'; % name of subfolder which will be created within directory containing functional files where .mat files containing fields of DSGN structure will be saved
 %     DSGN.allowemptycond = false; % default:false; if true, allow empty conditions
 %     DSGN.allowmissingcondfiles = false; % default:false; if true, throw warning instead of error when no file(s) are found corresponding to a MAT-file name/wildcard
     DSGN.multireg = 'noise_regs'; % specify name for matfile with noise parameters you want to save
