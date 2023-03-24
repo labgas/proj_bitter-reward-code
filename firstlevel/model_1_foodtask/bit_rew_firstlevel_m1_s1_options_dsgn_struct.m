@@ -214,7 +214,7 @@ LaBGAS_options.display.mask = which('gray_matter_mask_sparse.img');
 
 % REQUIRED IF YOU HAVE PARAMETRIC MODULATORS
 LaBGAS_options.pmods.pmod_polynom = 1;
-LaBGAS_options.pmods.pmod_name = 'rating';
+LaBGAS_options.pmods.pmod_name = 'wanting';
 LaBGAS_options.pmods.pmod_ortho_off = false;
 LaBGAS_options.pmods.pmod_type = 'parametric_standard';
 
@@ -278,10 +278,10 @@ tasknames_fmriprep = split(string(tasknames{1}),'_'); % fmriprep seems to cut of
         else
             DSGN.subjects = derivsubjdirs';
         end
-    DSGN.funcnames = {['/ses-1/func/s6*ses-1*' char(tasknames_fmriprep(1,:)) '*run-1.nii'],...
-        ['/ses-1/func/s6*ses-1*' char(tasknames_fmriprep(1,:)) '*run-2.nii'],...
-        ['/ses-2/func/s6*ses-2*' char(tasknames_fmriprep(1,:)) '*run-1.nii'],...
-        ['/ses-2/func/s6*ses-2*' char(tasknames_fmriprep(1,:)) '*run-2.nii']}; % cell array (one cell per session) of paths to functional files, relative to absolute path specific in DSGN.subjects
+    DSGN.funcnames = {['/ses-1/func/' rundirnames{1} '/s6*ses-1*' char(tasknames_fmriprep(1,:)) '*run-1*.nii'],...
+        ['/ses-1/func/' rundirnames{2} '/s6*ses-1*' char(tasknames_fmriprep(1,:)) '*run-2*.nii'],...
+        ['/ses-2/func/' rundirnames{1} '/s6*ses-2*' char(tasknames_fmriprep(1,:)) '*run-1*.nii'],...
+        ['/ses-2/func/' rundirnames{2} '/s6*ses-2*' char(tasknames_fmriprep(1,:)) '*run-2*.nii']}; % cell array (one cell per session) of paths to functional files, relative to absolute path specified in DSGN.subjects
    
     % OPTIONAL FIELDS
 %     DSGN.concatenation = {[1:6]}; % default: none; cell array of arrays of runs to concatenate; see documentation for when to concatenate, and how it works exactly
@@ -304,23 +304,19 @@ tasknames_fmriprep = split(string(tasknames{1}),'_'); % fmriprep seems to cut of
     % arrays (one cell per condition) of MAT-file names, in fixed order:
     % all conditions of interest first, conditions of no interest last
     c=0;
-    c=c+1;DSGN.conditions{c}={'sucrose' 'erythritol' 'sucralose' 'water' 'rating' 'swallow_rinse'};
-    c=c+1;DSGN.conditions{c}={'sucrose' 'erythritol' 'sucralose' 'water' 'rating' 'swallow_rinse'};
-    c=c+1;DSGN.conditions{c}={'sucrose' 'erythritol' 'sucralose' 'water' 'rating' 'swallow_rinse'};
-    c=c+1;DSGN.conditions{c}={'sucrose' 'erythritol' 'sucralose' 'water' 'rating' 'swallow_rinse'};
-    c=c+1;DSGN.conditions{c}={'sucrose' 'erythritol' 'sucralose' 'water' 'rating' 'swallow_rinse'};
-    c=c+1;DSGN.conditions{c}={'sucrose' 'erythritol' 'sucralose' 'water' 'rating' 'swallow_rinse'};
+    c=c+1;DSGN.conditions{c}={'bit_high calorie','bit_low calorie','bit_neutral','rating'};
+    c=c+1;DSGN.conditions{c}={'bit_high calorie','bit_low calorie','bit_neutral','rating'};
+    c=c+1;DSGN.conditions{c}={'pla_high calorie','pla_low calorie','pla_neutral','rating'};
+    c=c+1;DSGN.conditions{c}={'pla_high calorie','pla_low calorie','pla_neutral','rating'};
     
     % OPTIONAL FIELDS
     
     % cell array (one cell per session) of cell arrays (one cell per condition) of cell arrays (one cell per modulator) of MAT-file names; set to {{}} if you don't want parametric modulators
-    c=0;
-    c=c+1;DSGN.pmods{c}={'liking_sucrose' 'liking_erythritol' 'liking_sucralose' 'liking_water'};
-    c=c+1;DSGN.pmods{c}={'liking_sucrose' 'liking_erythritol' 'liking_sucralose' 'liking_water'};
-    c=c+1;DSGN.pmods{c}={'liking_sucrose' 'liking_erythritol' 'liking_sucralose' 'liking_water'};
-    c=c+1;DSGN.pmods{c}={'liking_sucrose' 'liking_erythritol' 'liking_sucralose' 'liking_water'};
-    c=c+1;DSGN.pmods{c}={'liking_sucrose' 'liking_erythritol' 'liking_sucralose' 'liking_water'};
-    c=c+1;DSGN.pmods{c}={'liking_sucrose' 'liking_erythritol' 'liking_sucralose' 'liking_water'};
+%     c=0;
+%     c=c+1;DSGN.pmods{c}={'wanting_bit_high calorie','wanting_bit_low calorie','wanting_bit_neutral'};
+%     c=c+1;DSGN.pmods{c}={'wanting_bit_high calorie','wanting_bit_low calorie','wanting_bit_neutral'};
+%     c=c+1;DSGN.pmods{c}={'wanting_pla_high calorie','wanting_pla_low calorie','wanting_pla_neutral'};
+%     c=c+1;DSGN.pmods{c}={'wanting_pla_high calorie','wanting_pla_low calorie','wanting_pla_neutral'};
 %     DSGN.convolution.type; default hrf, which means canonical hrf - other options: fir, spline (the latter is not yet implemented @LaBGAS, help needed from Tor/Martin/Bogdan)
 %     DSGN.convolution.time; default 0, which means no time derivative
 %     DSGN.convolution.dispersion: default 0, which means no dispersion derivative
@@ -352,47 +348,75 @@ tasknames_fmriprep = split(string(tasknames{1}),'_'); % fmriprep seems to cut of
     % unmodulated contrasts
     c=0;
     c=c+1;
-    DSGN.contrasts{c} = {{'.*sucrose{1}\s[^x]'}}; % CON_0001; this regexp will select any beta regressor starting with "sucrose", followed by exactly one white space, but not followed by x - which is only the unmodulated regressors for the sucrose condition
+    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'}}; % CON_0001; this regexp will select any beta regressor starting with "bit_high", followed by exactly one white space, but not followed by x - which is only the unmodulated regressors for the high calorie condition
     c=c+1;
-    DSGN.contrasts{c} = {{'.*erythritol{1}\s[^x]'}}; % CON_0002
+    DSGN.contrasts{c} = {{'.*bit_low{1}\s[^x]'}}; % CON_0002
     c=c+1;
-    DSGN.contrasts{c} = {{'.*sucralose{1}\s[^x]'}}; % CON_0003
+    DSGN.contrasts{c} = {{'.*bit_neutral{1}\s[^x]'}}; % CON_0003
     c=c+1;
-    DSGN.contrasts{c} = {{'.*water{1}\s[^x]'}}; % CON_0004
+    DSGN.contrasts{c} = {{'.*pla_high{1}\s[^x]'}}; % CON_0004
     c=c+1;
-    DSGN.contrasts{c} = {{'.*sucrose{1}\s[^x]'} {'.*water{1}\s[^x]'}}; % CON_0005
+    DSGN.contrasts{c} = {{'.*pla_low{1}\s[^x]'}}; % CON_0005
     c=c+1;
-    DSGN.contrasts{c} = {{'.*erythritol{1}\s[^x]'} {'.*water{1}\s[^x]'}}; % CON_0006
+    DSGN.contrasts{c} = {{'.*pla_neutral{1}\s[^x]'}}; % CON_0006
     c=c+1;
-    DSGN.contrasts{c} = {{'.*sucralose{1}\s[^x]'} {'.*water{1}\s[^x]'}}; % CON_0007
+    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*pla_high{1}\s[^x]'}}; % CON_0007
     c=c+1;
-    DSGN.contrasts{c} = {{'.*sucrose{1}\s[^x]'} {'.*sucralose{1}\s[^x]'}}; % CON_0008
+    DSGN.contrasts{c} = {{'.*bit_low{1}\s[^x]'} {'.*pla_low{1}\s[^x]'}}; % CON_0008
     c=c+1;
-    DSGN.contrasts{c} = {{'.*sucrose{1}\s[^x]'} {'.*erythritol{1}\s[^x]'}}; % CON_0009
+    DSGN.contrasts{c} = {{'.*bit_neutral{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0009
     c=c+1;
-    DSGN.contrasts{c} = {{'.*erythritol{1}\s[^x]'} {'.*sucralose{1}\s[^x]'}}; % CON_0010
+    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*bit_neutral{1}\s[^x]'}}; % CON_0010
+    c=c+1;
+    DSGN.contrasts{c} = {{'.*bit_low{1}\s[^x]'} {'.*bit_neutral{1}\s[^x]'}}; % CON_0011
+    c=c+1;
+    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*bit_low{1}\s[^x]'}}; % CON_0012
+    c=c+1;
+    DSGN.contrasts{c} = {{'.*pla_high{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0013
+    c=c+1;
+    DSGN.contrasts{c} = {{'.*pla_low{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0014
+    c=c+1;
+    DSGN.contrasts{c} = {{'.*pla_high{1}\s[^x]'} {'.*pla_low{1}\s[^x]'}}; % CON_0015
+    c=c+1;
+    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*bit_neutral{1}\s[^x]'} {'.*pla_high{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0016
+    c=c+1;
+    DSGN.contrasts{c} = {{'.*bit_low{1}\s[^x]'} {'.*bit_neutral{1}\s[^x]'} {'.*pla_low{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0017
+    c=c+1;
+    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*bit_low{1}\s[^x]'} {'.*pla_high{1}\s[^x]'} {'.*pla_low{1}\s[^x]'}}; % CON_0018
+    c=c+1;
+    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*pla_high{1}\s[^x]'}}; % CON_0019
+    c=c+1;
+    DSGN.contrasts{c} = {{'.*bit_low{1}\s[^x]'} {'.*pla_low{1}\s[^x]'}}; % CON_0020
+    c=c+1;
+    DSGN.contrasts{c} = {{'.*bit_neutral{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0021
+    c=c+1;
+    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*bit_neutral{1}\s[^x]'} {'.*pla_high{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0022
+    c=c+1;
+    DSGN.contrasts{c} = {{'.*bit_low{1}\s[^x]'} {'.*bit_neutral{1}\s[^x]'} {'.*pla_low{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0023
+    c=c+1;
+    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*bit_low{1}\s[^x]'} {'.*pla_high{1}\s[^x]'} {'.*pla_low{1}\s[^x]'}}; % CON_0024
     
     % modulated contrasts
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*liking_sucrose'}}; % CON_0011; this regexp will select any beta regressor with "liking_sucrose" anywhere in its name - which is only the modulated regressors for the sucrose condition
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*liking_erythritol'}}; % CON_0012
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*liking_sucralose'}}; % CON_0013
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*liking_water'}}; % CON_0014
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*liking_sucrose'} {'.*liking_water'}}; % CON_0015
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*liking_erythritol'} {'.*liking_water'}}; % CON_0016
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*liking_sucralose'} {'.*liking_water'}}; % CON_0017
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*liking_sucrose'} {'.*liking_sucralose'}}; % CON_0018
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*liking_sucrose'} {'.*liking_erythritol'}}; % CON_0019
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*liking_erythritol'} {'.*liking_sucralose'}}; % CON_0020
+%     c=c+1;
+%     DSGN.contrasts{c} = {{'.*wanting_bit_high'}}; % CON_0011; this regexp will select any beta regressor with "wanting_sucrose" anywhere in its name - which is only the modulated regressors for the sucrose condition
+%     c=c+1;
+%     DSGN.contrasts{c} = {{'.*wanting_bit_low'}}; % CON_0012
+%     c=c+1;
+%     DSGN.contrasts{c} = {{'.*wanting_bit_neutral'}}; % CON_0013
+%     c=c+1;
+%     DSGN.contrasts{c} = {{'.*liking_water'}}; % CON_0014
+%     c=c+1;
+%     DSGN.contrasts{c} = {{'.*liking_sucrose'} {'.*liking_water'}}; % CON_0015
+%     c=c+1;
+%     DSGN.contrasts{c} = {{'.*liking_erythritol'} {'.*liking_water'}}; % CON_0016
+%     c=c+1;
+%     DSGN.contrasts{c} = {{'.*liking_sucralose'} {'.*liking_water'}}; % CON_0017
+%     c=c+1;
+%     DSGN.contrasts{c} = {{'.*liking_sucrose'} {'.*liking_sucralose'}}; % CON_0018
+%     c=c+1;
+%     DSGN.contrasts{c} = {{'.*liking_sucrose'} {'.*liking_erythritol'}}; % CON_0019
+%     c=c+1;
+%     DSGN.contrasts{c} = {{'.*liking_erythritol'} {'.*liking_sucralose'}}; % CON_0020
     
     % OPTIONAL FIELDS
     
@@ -402,65 +426,108 @@ tasknames_fmriprep = split(string(tasknames{1}),'_'); % fmriprep seems to cut of
     % unmodulated
     c=0;
     c=c+1;
-    DSGN.contrastnames{c} = 'sucrose unmodulated'; % CON_0001
+    DSGN.contrastnames{c} = 'bitter high calorie'; % CON_0001
     DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'erythritol unmodulated'; % CON_0002
+    DSGN.contrastnames{c} = 'bitter low calorie'; % CON_0002
     DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'sucralose unmodulated'; % CON_0003
+    DSGN.contrastnames{c} = 'bitter neutral'; % CON_0003
     DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'water unmodulated'; % CON_0004
+    DSGN.contrastnames{c} = 'placebo high calorie'; % CON_0004
     DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'sucrose unmodulated vs water unmodulated'; % CON_0005
+    DSGN.contrastnames{c} = 'placebo low calorie'; % CON_0005
+    DSGN.contrastweights{c} = [1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'placebo neutral'; % CON_0006
+    DSGN.contrastweights{c} = [1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'bitter vs placebo high calorie'; % CON_0007
     DSGN.contrastweights{c} = [1 -1];
     c=c+1;
-    DSGN.contrastnames{c} = 'erythritol unmodulated vs water unmodulated'; % CON_0006
+    DSGN.contrastnames{c} = 'bitter vs placebo low calorie'; % CON_0008
     DSGN.contrastweights{c} = [1 -1];
     c=c+1;
-    DSGN.contrastnames{c} = 'sucralose unmodulated vs water unmodulated'; % CON_0007
+    DSGN.contrastnames{c} = 'bitter vs placebo neutral'; % CON_0009
     DSGN.contrastweights{c} = [1 -1];
     c=c+1;
-    DSGN.contrastnames{c} = 'sucrose unmodulated vs sucralose unmodulated'; % CON_0008
+    DSGN.contrastnames{c} = 'bitter high calorie vs neutral'; % CON_0010
     DSGN.contrastweights{c} = [1 -1];
     c=c+1;
-    DSGN.contrastnames{c} = 'sucrose unmodulated vs erythritol unmodulated'; % CON_0009
+    DSGN.contrastnames{c} = 'bitter low calorie vs neutral'; % CON_0011
     DSGN.contrastweights{c} = [1 -1];
     c=c+1;
-    DSGN.contrastnames{c} = 'erythritol unmodulated vs sucralose unmodulated'; % CON_0010
+    DSGN.contrastnames{c} = 'bitter high calorie vs low calorie'; % CON_0012
     DSGN.contrastweights{c} = [1 -1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'placebo high calorie vs neutral'; % CON_0013
+    DSGN.contrastweights{c} = [1 -1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'placebo low calorie vs neutral'; % CON_0014
+    DSGN.contrastweights{c} = [1 -1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'placebo high calorie vs low calorie'; % CON_0015
+    DSGN.contrastweights{c} = [1 -1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'bitter vs placebo high calorie vs neutral'; % CON_0016
+    DSGN.contrastweights{c} = [1 -1 -1 1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'bitter vs placebo low calorie vs neutral'; % CON_0017
+    DSGN.contrastweights{c} = [1 -1 -1 1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'bitter vs placebo high calorie vs low calorie'; % CON_0018
+    DSGN.contrastweights{c} = [1 -1 -1 1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'main high calorie'; % CON_0019
+    DSGN.contrastweights{c} = [1 1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'main low calorie'; % CON_0020
+    DSGN.contrastweights{c} = [1 1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'main neutral'; % CON_0021
+    DSGN.contrastweights{c} = [1 1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'main high calorie vs neutral'; % CON_0022
+    DSGN.contrastweights{c} = [1 -1 1 -1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'main low calorie vs neutral'; % CON_0023
+    DSGN.contrastweights{c} = [1 -1 1 -1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'main high calorie vs low calorie'; % CON_0024
+    DSGN.contrastweights{c} = [1 -1 1 -1];
     
-    c=c+1;
-    DSGN.contrastnames{c} = 'sucrose modulated'; % CON_0011
-    DSGN.contrastweights{c} = [1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'erythritol modulated'; % CON_0012
-    DSGN.contrastweights{c} = [1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'sucralose modulated'; % CON_0013
-    DSGN.contrastweights{c} = [1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'water modulated'; % CON_0014
-    DSGN.contrastweights{c} = [1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'sucrose modulated vs water modulated'; % CON_0015
-    DSGN.contrastweights{c} = [1 -1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'erythritol modulated vs water modulated'; % CON_0016
-    DSGN.contrastweights{c} = [1 -1];    
-    c=c+1;
-    DSGN.contrastnames{c} = 'sucralose modulated vs water modulated'; % CON_0017
-    DSGN.contrastweights{c} = [1 -1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'sucrose modulated vs sucralose modulated'; % CON_0018
-    DSGN.contrastweights{c} = [1 -1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'sucrose modulated vs erythritol modulated'; % CON_0019
-    DSGN.contrastweights{c} = [1 -1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'erythritol modulated vs sucralose modulated'; % CON_0020
-    DSGN.contrastweights{c} = [1 -1];
+    % modulated contrasts
+%     c=c+1;
+%     DSGN.contrastnames{c} = 'bitter high calorie modulated'; % CON_0011
+%     DSGN.contrastweights{c} = [1];
+%     c=c+1;
+%     DSGN.contrastnames{c} = 'bitter low calorie modulated'; % CON_0012
+%     DSGN.contrastweights{c} = [1];
+%     c=c+1;
+%     DSGN.contrastnames{c} = 'bitter neutral modulated'; % CON_0013
+%     DSGN.contrastweights{c} = [1];
+%     c=c+1;
+%     DSGN.contrastnames{c} = 'water modulated'; % CON_0014
+%     DSGN.contrastweights{c} = [1];
+%     c=c+1;
+%     DSGN.contrastnames{c} = 'sucrose modulated vs water modulated'; % CON_0015
+%     DSGN.contrastweights{c} = [1 -1];
+%     c=c+1;
+%     DSGN.contrastnames{c} = 'erythritol modulated vs water modulated'; % CON_0016
+%     DSGN.contrastweights{c} = [1 -1];    
+%     c=c+1;
+%     DSGN.contrastnames{c} = 'sucralose modulated vs water modulated'; % CON_0017
+%     DSGN.contrastweights{c} = [1 -1];
+%     c=c+1;
+%     DSGN.contrastnames{c} = 'sucrose modulated vs sucralose modulated'; % CON_0018
+%     DSGN.contrastweights{c} = [1 -1];
+%     c=c+1;
+%     DSGN.contrastnames{c} = 'sucrose modulated vs erythritol modulated'; % CON_0019
+%     DSGN.contrastweights{c} = [1 -1];
+%     c=c+1;
+%     DSGN.contrastnames{c} = 'erythritol modulated vs sucralose modulated'; % CON_0020
+%     DSGN.contrastweights{c} = [1 -1];
     
     
