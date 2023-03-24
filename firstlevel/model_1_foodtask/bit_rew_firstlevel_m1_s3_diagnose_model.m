@@ -1,27 +1,32 @@
-%%% LaBGAScore_firstlevel_s3_diagnose_model.m
+%% bit_rew_firstlevel_s3_diagnose_model.m
 %
 % This script will run diagnostics on first level models and publish them
 % as an html report using the CANlab function scn_spm_design_check, and
 % save variance inflation factors as a .mat file
 %
-% DOCUMENTATION
-% help scn_spm_design_check
+% *DOCUMENTATION*
+%
+% type "help scn_spm_design_check" in Matlab command window
 % 
-% USAGE
+% *USAGE*
 % Script should be called from LaBGAScore_firstlevel_s2_fit_model.m, it
 % is not for standalone use
 %
-%__________________________________________________________________________
+% -------------------------------------------------------------------------
 %
 % authors: Lukas Van Oudenhove
+%
 % date:   March, 2022
 %
-%__________________________________________________________________________
-% @(#)% LaBGAScore_firstlevel_s3_diagnose_model.m         v1.2        
-% last modified: 2022/05/29
-
-
+% -------------------------------------------------------------------------
+%
+% LaBGAScore_firstlevel_s3_diagnose_model.m         v1.3   
+%
+% last modified: 2023/03/24
+%
+%
 %% VIFS AND DESIGN
+% -------------------------------------------------------------------------
 
     vifs = scn_spm_design_check(subjfirstdir,'events_only','vif_thresh',LaBGAS_options.mandatory.vif_thresh);
     drawnow, snapnow
@@ -30,6 +35,7 @@
     
 
 %% FIRST LEVEL MAPS
+% -------------------------------------------------------------------------
 
 if LaBGAS_options.display.plotmontages
 

@@ -1,4 +1,4 @@
-%%% bit_rew_firstlevel_m1_s1_options_dsgn_struct.m
+%% bit_rew_firstlevel_m1_s1_options_dsgn_struct.m
 %
 % This script sets the options and creates a CANlab-style DSGN structure
 % variable, which are used by the subsequent script in the standard LaBGAS
@@ -182,8 +182,8 @@
 %__________________________________________________________________________
 % @(#)% LaBGAScore_firstlevel_s1_options_dsgn_struct.m         v1.3
 % last modified: 2022/06/03
-
-
+%
+%
 %% CREATE LABGAS_OPTIONS STRUCTURE
 %--------------------------------------------------------------------------
 

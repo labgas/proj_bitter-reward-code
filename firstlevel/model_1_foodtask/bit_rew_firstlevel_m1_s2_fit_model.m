@@ -1,4 +1,4 @@
-%%% LaBGAScore_firstlevel_s2_fit_model.m
+%% bit_rew_firstlevel_s2_fit_model.m
 %
 % This script does everything to fit and diagnose first level models,
 % more specifically
@@ -105,8 +105,8 @@
 %__________________________________________________________________________
 % @(#)% LaBGAScore_firstlevel_s2_fit_model.m         v1.3
 % last modified: 2022/05/29
-
-
+%
+%
 %% MAKE SURE DEPENDENCIES ARE ON MATLAB PATH, AND PREVIOUS SCRIPT IS RUN
 
 % check whether LaBGAScore_firstlevel_s1_options_dsgn_struct has been run
