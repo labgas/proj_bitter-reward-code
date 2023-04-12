@@ -303,29 +303,22 @@ tasknames_fmriprep = split(string(tasknames{2}),'_'); % fmriprep seems to cut of
     % cell array (one cell per session (i.e. run in our case)) of cell
     % arrays (one cell per condition) of MAT-file names, in fixed order:
     % all conditions of interest first, conditions of no interest last
-    c=0;
-    c=c+1;DSGN.conditions{c}={'bit_Cue_C0','bit_Cue_C2','bit_Cue_C10','feedback'};
-    c=c+1;DSGN.conditions{c}={'bit_Cue_C0','bit_Cue_C2','bit_Cue_C10','feedback'};
-    c=c+1;DSGN.conditions{c}={'pla_Cue_C0 SP','pla_Cue_C2','pla_Cue_C10','feedback'};
-    c=c+1;DSGN.conditions{c}={'pla_Cue_C0 SP','pla_Cue_C2','pla_Cue_C10','feedback'};
     
-% I'm not sure whether to include the feedback as seperate conditions (bc
-% not completeley sure where the interest lies (seems like the type of feedback is also important. Does give a lot more contrast options, haven't written them out because first wanted to discuss)
-%     c=0;
-%     c=c+1;DSGN.conditions{c}={'bit_Cue_C0','bit_Cue_C2','bit_Cue_C10','bit_Feedback_C0', 'bit_Feedback_C2_nowin', 'bit_Feedback_C10_nowin', 'bit_Feedback_C2_win', 'bit_Feedback_C10_win'};
-%     c=c+1;DSGN.conditions{c}={'bit_Cue_C0','bit_Cue_C2','bit_Cue_C10','bit_Feedback_C0', 'bit_Feedback_C2_nowin', 'bit_Feedback_C10_nowin', 'bit_Feedback_C2_win', 'bit_Feedback_C10_win'};
-%     c=c+1;DSGN.conditions{c}={'pla_Cue_C0','pla_Cue_C2','pla_Cue_C10','pla_bit_Feedback_C0', 'pla_Feedback_C2_nowin', 'pla_Feedback_C10_nowin', 'pla_Feedback_C2_win', 'pla_Feedback_C10_win'};
-%     c=c+1;DSGN.conditions{c}={'pla_Cue_C0','pla_Cue_C2','pla_Cue_C10','pla_bit_Feedback_C0', 'pla_Feedback_C2_nowin', 'pla_Feedback_C10_nowin', 'pla_Feedback_C2_win', 'pla_Feedback_C10_win'};
+    c=0;
+    c=c+1;DSGN.conditions{c}={'bit_Cue_C0','bit_Cue_C2','bit_Cue_C10'};
+    c=c+1;DSGN.conditions{c}={'bit_Cue_C0','bit_Cue_C2','bit_Cue_C10'};
+    c=c+1;DSGN.conditions{c}={'pla_Cue_C0','pla_Cue_C2','pla_Cue_C10'};
+    c=c+1;DSGN.conditions{c}={'pla_Cue_C0','pla_Cue_C2','pla_Cue_C10'};
     
     
     % OPTIONAL FIELDS
     
     % cell array (one cell per session) of cell arrays (one cell per condition) of cell arrays (one cell per modulator) of MAT-file names; set to {{}} if you don't want parametric modulators
-%     c=0;
-%     c=c+1;DSGN.conditions{c}={'bit_Cue_C0 SP','bit_Cue_C2 SP','bit_Cue_C10 SP','feedback'};
-%     c=c+1;DSGN.conditions{c}={'bit_Cue_C0 SP','bit_Cue_C2 SP','bit_Cue_C10 SP','feedback'};
-%     c=c+1;DSGN.conditions{c}={'pla_Cue_C0 SP','pla_Cue_C2 SP','pla_Cue_C10 SP','feedback'};
-%     c=c+1;DSGN.conditions{c}={'pla_Cue_C0 SP','pla_Cue_C2 SP','pla_Cue_C10 SP','feedback'};
+    c=0;
+    c=c+1;DSGN.conditions{c}={'bit_Feedback_C0','bit_Feedback_C2_win','bit_Feedback_C10_win'};
+    c=c+1;DSGN.conditions{c}={'bit_Feedback_C0','bit_Feedback_C2_win','bit_Feedback_C10_win'};
+    c=c+1;DSGN.conditions{c}={'pla_bit_Feedback_C0','pla_Feedback_C2_win','pla_Feedback_C10_win'};
+    c=c+1;DSGN.conditions{c}={'pla_bit_Feedback_C0','pla_Feedback_C2_win','pla_Feedback_C10_win'};
 %     DSGN.convolution.type; default hrf, which means canonical hrf - other options: fir, spline (the latter is not yet implemented @LaBGAS, help needed from Tor/Martin/Bogdan)
 %     DSGN.convolution.time; default 0, which means no time derivative
 %     DSGN.convolution.dispersion: default 0, which means no dispersion derivative
@@ -407,11 +400,11 @@ tasknames_fmriprep = split(string(tasknames{2}),'_'); % fmriprep seems to cut of
     
     % modulated contrasts
 %     c=c+1;
-%     DSGN.contrasts{c} = {{'.*wanting_bit_high'}}; % CON_0011; this regexp will select any beta regressor with "wanting_sucrose" anywhere in its name - which is only the modulated regressors for the sucrose condition
+%     DSGN.contrasts{c} = {{'.*Feedback_C0'}}; % CON_0011; this regexp will select any beta regressor with "Feedback_C0" anywhere in its name - which is only the modulated regressors for the sucrose condition
 %     c=c+1;
-%     DSGN.contrasts{c} = {{'.*wanting_bit_low'}}; % CON_0012
+%     DSGN.contrasts{c} = {{'.*Feedback_C2'}}; % CON_0012
 %     c=c+1;
-%     DSGN.contrasts{c} = {{'.*wanting_bit_neutral'}}; % CON_0013
+%     DSGN.contrasts{c} = {{'.*Feedback_C10'}}; % CON_0013
 %     c=c+1;
 %     DSGN.contrasts{c} = {{'.*liking_water'}}; % CON_0014
 %     c=c+1;
