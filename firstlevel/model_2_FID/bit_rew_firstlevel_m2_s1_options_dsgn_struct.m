@@ -237,7 +237,7 @@ bit_rew_prep_s0_define_directories;
 %       if you have more than one task, use one model/script per task, and
 %       add _<taskname> (as in your filenames in derivdir) to rundirnames
 
-rundirnames = {'run-1_food';'run-2_food'};
+rundirnames = {'run-1_FID';'run-2_FID'};
 
 % set number of sessions
 
@@ -261,7 +261,7 @@ tasknames_fmriprep = split(string(tasknames{2}),'_'); % fmriprep seems to cut of
 % INPUT
     
     % REQUIRED FIELDS
-    DSGN.metadata = "proj-bitter-reward first level analysis model with food images task, i.e. modeling 4 conditions for low calorie images, high calorie images, neutral images and rest as blocks"; % field for annotation with study info, or whatever you like
+    DSGN.metadata = "proj-bitter-reward first level analysis model with FID task, i.e. modeling 6 conditions for cues with 0,2 or 10 win, and feedback with 0,2 or 10 win"; % field for annotation with study info, or whatever you like
     DSGN.modeldir = '/data/proj_bitter-reward/firstlevel/model_2_FID'; % directory where you want to write first level results for this model
         if ~isfield(LaBGAS_options,'subjs2analyze')
             DSGN.subjects = derivsubjdirs';
@@ -305,24 +305,24 @@ tasknames_fmriprep = split(string(tasknames{2}),'_'); % fmriprep seems to cut of
     % all conditions of interest first, conditions of no interest last
     
     c=0;
-    c=c+1;DSGN.conditions{c}={'bit_Cue_C0','bit_Cue_C2','bit_Cue_C10'};
-    c=c+1;DSGN.conditions{c}={'bit_Cue_C0','bit_Cue_C2','bit_Cue_C10'};
-    c=c+1;DSGN.conditions{c}={'pla_Cue_C0','pla_Cue_C2','pla_Cue_C10'};
-    c=c+1;DSGN.conditions{c}={'pla_Cue_C0','pla_Cue_C2','pla_Cue_C10'};
+    c=c+1;DSGN.conditions{c}={'bit_cue_C0','bit_cue_C2','bit_cue_C10','bit_feedback_C0','bit_feedback_C2_win','bit_feedback_C10_win'};
+    c=c+1;DSGN.conditions{c}={'bit_cue_C0','bit_cue_C2','bit_cue_C10','bit_feedback_C0','bit_feedback_C2_win','bit_feedback_C10_win'};
+    c=c+1;DSGN.conditions{c}={'pla_cue_C0','pla_cue_C2','pla_cue_C10','pla_bit_feedback_C0','pla_feedback_C2_win','pla_feedback_C10_win' };
+    c=c+1;DSGN.conditions{c}={'pla_cue_C0','pla_cue_C2','pla_cue_C10', 'pla_bit_feedback_C0','pla_feedback_C2_win','pla_feedback_C10_win'};
     
     
     % OPTIONAL FIELDS
     
     % cell array (one cell per session) of cell arrays (one cell per condition) of cell arrays (one cell per modulator) of MAT-file names; set to {{}} if you don't want parametric modulators
-    c=0;
-    c=c+1;DSGN.conditions{c}={'bit_Feedback_C0','bit_Feedback_C2_win','bit_Feedback_C10_win'};
-    c=c+1;DSGN.conditions{c}={'bit_Feedback_C0','bit_Feedback_C2_win','bit_Feedback_C10_win'};
-    c=c+1;DSGN.conditions{c}={'pla_bit_Feedback_C0','pla_Feedback_C2_win','pla_Feedback_C10_win'};
-    c=c+1;DSGN.conditions{c}={'pla_bit_Feedback_C0','pla_Feedback_C2_win','pla_Feedback_C10_win'};
-%     DSGN.convolution.type; default hrf, which means canonical hrf - other options: fir, spline (the latter is not yet implemented @LaBGAS, help needed from Tor/Martin/Bogdan)
-%     DSGN.convolution.time; default 0, which means no time derivative
-%     DSGN.convolution.dispersion: default 0, which means no dispersion derivative
-%     DSGN.ar1 = false; % autoregressive AR(1) to model serial correlations; SPM default is true, CANlab default is false, Tor recommends turning autocorrelation off, because this algorithm pools across the whole brain, and does not perform well in some situations; if you are performing a group analysis, the autocorrelation problem is not as concerning
+%   c=0;
+%   c=c+1;DSGN.conditions{c}={};
+%   c=c+1;DSGN.conditions{c}={};
+%   c=c+1;DSGN.conditions{c}={};
+%   c=c+1;DSGN.conditions{c}={};
+%   DSGN.convolution.type; default hrf, which means canonical hrf - other options: fir, spline (the latter is not yet implemented @LaBGAS, help needed from Tor/Martin/Bogdan)
+%   DSGN.convolution.time; default 0, which means no time derivative
+%   DSGN.convolution.dispersion: default 0, which means no dispersion derivative
+%   DSGN.ar1 = false; % autoregressive AR(1) to model serial correlations; SPM default is true, CANlab default is false, Tor recommends turning autocorrelation off, because this algorithm pools across the whole brain, and does not perform well in some situations; if you are performing a group analysis, the autocorrelation problem is not as concerning
     DSGN.notimemod = true; % default: false; if true, turn off time modulation of conditions, i.e. when you do not expect linear trends over time
 %     DSGN.singletrials = {{}}; % a cell array (1 cell per session) of cell arrays (1 cell per condition) of (corresponding to DSGN.conditions) of true/false values indicating whether to convert specified condition to set of single trial conditions
 %     DSGN.singletrialsall = false; % default: false; if true, set DSGN.singletrials to true for all conditions
@@ -350,76 +350,33 @@ tasknames_fmriprep = split(string(tasknames{2}),'_'); % fmriprep seems to cut of
     % unmodulated contrasts
     c=0;
     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C0{1}\s[^x]'}}; % CON_0001; this regexp will select any beta regressor starting with "bit_high", followed by exactly one white space, but not followed by x - which is only the unmodulated regressors for the high calorie condition
+    DSGN.contrasts{c} = {{'.*bit_cue_C0{1}\s[^x]'}}; % CON_0001; this regexp will select any beta regressor starting with "bit_cue", followed by exactly one white space, but not followed by x - which is only the unmodulated regressors for the cue_0 condition
     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C2{1}\s[^x]'}}; % CON_0002
+    DSGN.contrasts{c} = {{'.*bit_cue_C2{1}\s[^x]'}}; % CON_0002
     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C10{1}\s[^x]'}}; % CON_0003
+    DSGN.contrasts{c} = {{'.*bit_cue_C10{1}\s[^x]'}}; % CON_0003
     c=c+1;
-    DSGN.contrasts{c} = {{'.*pla_Cue_C0{1}\s[^x]'}}; % CON_0004
+    DSGN.contrasts{c} = {{'.*pla_cue_C0{1}\s[^x]'}}; % CON_0004
     c=c+1;
-    DSGN.contrasts{c} = {{'.*pla_Cue_C2{1}\s[^x]'}}; % CON_0005
+    DSGN.contrasts{c} = {{'.*pla_cue_C2{1}\s[^x]'}}; % CON_0005
     c=c+1;
-    DSGN.contrasts{c} = {{'.*pla_Cue_C10{1}\s[^x]'}}; % CON_0006
+    DSGN.contrasts{c} = {{'.*pla_cue_C10{1}\s[^x]'}}; % CON_0006
+    c=c+1
+    DSGN.contrasts{c} = {{'.*bit_feedback_C0{1}\s[^x]'}}; % CON_007
     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C0{1}\s[^x]'} {'.*pla_Cue_C0{1}\s[^x]'}}; % CON_0007
+    DSGN.contrasts{c} = {{'.*bit_feedback_C2_win{1}\s[^x]'}}; % CON_008
     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C2{1}\s[^x]'} {'.*pla_Cue_C2{1}\s[^x]'}}; % CON_0008
+    DSGN.contrasts{c} = {{'.*bit_feedback_C10_win{1}\s[^x]'}}; % CON_009
     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C10{1}\s[^x]'} {'.*pla_Cue_C10{1}\s[^x]'}}; % CON_0009
+    DSGN.contrasts{c} = {{'.*pla_feedback_C0{1}\s[^x]'}}; % CON_010 
     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C0{1}\s[^x]'} {'.*bit_Cue_C10{1}\s[^x]'}}; % CON_0010
+    DSGN.contrasts{c} = {{'.*pla_feedback_C2_win{1}\s[^x]'}}; % CON_011
     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C2{1}\s[^x]'} {'.*bit_Cue_C10{1}\s[^x]'}}; % CON_0011
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C0{1}\s[^x]'} {'.*bit_Cue_C2{1}\s[^x]'}}; % CON_0012
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*pla_Cue_C0{1}\s[^x]'} {'.*pla_Cue_C10{1}\s[^x]'}}; % CON_0013
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*pla_Cue_C2{1}\s[^x]'} {'.*pla_Cue_C10{1}\s[^x]'}}; % CON_0014
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*pla_Cue_C0{1}\s[^x]'} {'.*pla_Cue_C2{1}\s[^x]'}}; % CON_0015
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C0{1}\s[^x]'} {'.*bit_Cue_C10{1}\s[^x]'} {'.*pla_Cue_C0{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0016
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C2{1}\s[^x]'} {'.*bit_Cue_C10{1}\s[^x]'} {'.*pla_Cue_C2{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0017
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C0{1}\s[^x]'} {'.*bit_Cue_C2{1}\s[^x]'} {'.*pla_Cue_C0{1}\s[^x]'} {'.*pla_low{1}\s[^x]'}}; % CON_0018
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C0{1}\s[^x]'} {'.*pla_Cue_C0{1}\s[^x]'}}; % CON_0019
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C2{1}\s[^x]'} {'.*pla_Cue_C2{1}\s[^x]'}}; % CON_0020
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C10{1}\s[^x]'} {'.*pla_Cue_C10{1}\s[^x]'}}; % CON_0021
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C0{1}\s[^x]'} {'.*bit_Cue_C10{1}\s[^x]'} {'.*pla_Cue_C0{1}\s[^x]'} {'.*pla_Cue_C10{1}\s[^x]'}}; % CON_0022
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C2{1}\s[^x]'} {'.*bit_Cue_C10{1}\s[^x]'} {'.*pla_Cue_C2{1}\s[^x]'} {'.*pla_Cue_C10{1}\s[^x]'}}; % CON_0023
-    c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_Cue_C0{1}\s[^x]'} {'.*bit_Cue_C2{1}\s[^x]'} {'.*pla_Cue_C0{1}\s[^x]'} {'.*pla_Cue_C2{1}\s[^x]'}}; % CON_0024
+    DSGN.contrasts{c} = {{'.*pla_feedback_C10_win{1}\s[^x]'}}; % CON_012
+   
+   
     
-    % modulated contrasts
-%     c=c+1;
-%     DSGN.contrasts{c} = {{'.*Feedback_C0'}}; % CON_0011; this regexp will select any beta regressor with "Feedback_C0" anywhere in its name - which is only the modulated regressors for the sucrose condition
-%     c=c+1;
-%     DSGN.contrasts{c} = {{'.*Feedback_C2'}}; % CON_0012
-%     c=c+1;
-%     DSGN.contrasts{c} = {{'.*Feedback_C10'}}; % CON_0013
-%     c=c+1;
-%     DSGN.contrasts{c} = {{'.*liking_water'}}; % CON_0014
-%     c=c+1;
-%     DSGN.contrasts{c} = {{'.*liking_sucrose'} {'.*liking_water'}}; % CON_0015
-%     c=c+1;
-%     DSGN.contrasts{c} = {{'.*liking_erythritol'} {'.*liking_water'}}; % CON_0016
-%     c=c+1;
-%     DSGN.contrasts{c} = {{'.*liking_sucralose'} {'.*liking_water'}}; % CON_0017
-%     c=c+1;
-%     DSGN.contrasts{c} = {{'.*liking_sucrose'} {'.*liking_sucralose'}}; % CON_0018
-%     c=c+1;
-%     DSGN.contrasts{c} = {{'.*liking_sucrose'} {'.*liking_erythritol'}}; % CON_0019
-%     c=c+1;
-%     DSGN.contrasts{c} = {{'.*liking_erythritol'} {'.*liking_sucralose'}}; % CON_0020
-    
+ 
     % OPTIONAL FIELDS
     
     % to define custom contrast names and weights
@@ -428,108 +385,39 @@ tasknames_fmriprep = split(string(tasknames{2}),'_'); % fmriprep seems to cut of
     % unmodulated
     c=0;
     c=c+1;
-    DSGN.contrastnames{c} = 'bitter zero SP'; % CON_0001
+    DSGN.contrastnames{c} = 'bitter cue 0 SP'; % CON_0001
     DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'bitter two SP'; % CON_0002
+    DSGN.contrastnames{c} = 'bitter cue 2 SP'; % CON_0002
     DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'bitter ten SP'; % CON_0003
+    DSGN.contrastnames{c} = 'bitter cue 10 SP'; % CON_0003
     DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'placebo zero SP'; % CON_0004
+    DSGN.contrastnames{c} = 'placebo cue 0 SP'; % CON_0004
     DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'placebo two SP'; % CON_0005
+    DSGN.contrastnames{c} = 'placebo cue 2 SP'; % CON_0005
     DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'placebo ten SP'; % CON_0006
+    DSGN.contrastnames{c} = 'placebo cue 10 SP'; % CON_0006
     DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'bitter vs placebo zero SP'; % CON_0007
-    DSGN.contrastweights{c} = [1 -1];
+    DSGN.contrastnames{c} = 'bitter feedback 0 SP'; % CON_0007
+    DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'bitter vs placebo two SP'; % CON_0008
-    DSGN.contrastweights{c} = [1 -1];
+    DSGN.contrastnames{c} = 'bitter feedback 2 SP'; % CON_0008
+    DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'bitter vs placebo ten SP'; % CON_0009
-    DSGN.contrastweights{c} = [1 -1];
+    DSGN.contrastnames{c} = 'bitter feedback 10 SP'; % CON_0009
+    DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'bitter zero SP vs ten SP'; % CON_0010
-    DSGN.contrastweights{c} = [1 -1];
+    DSGN.contrastnames{c} = 'placebo feedback 0 SP'; % CON_0010
+    DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'bitter two SP vs ten SP'; % CON_0011
-    DSGN.contrastweights{c} = [1 -1];
+    DSGN.contrastnames{c} = 'placebo feedback 2 SP'; % CON_0011
+    DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'bitter zero SP vs two SP'; % CON_0012
-    DSGN.contrastweights{c} = [1 -1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'placebo zero SP vs ten SP'; % CON_0013
-    DSGN.contrastweights{c} = [1 -1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'placebo two SP vs ten SP'; % CON_0014
-    DSGN.contrastweights{c} = [1 -1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'placebo zero SP vs two SP'; % CON_0015
-    DSGN.contrastweights{c} = [1 -1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'bitter vs placebo zero SP vs ten SP'; % CON_0016
-    DSGN.contrastweights{c} = [1 -1 -1 1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'bitter vs placebo two SP vs ten SP'; % CON_0017
-    DSGN.contrastweights{c} = [1 -1 -1 1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'bitter vs placebo zero SP vs two SP'; % CON_0018
-    DSGN.contrastweights{c} = [1 -1 -1 1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'main zero SP'; % CON_0019
-    DSGN.contrastweights{c} = [1 1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'main two SP'; % CON_0020
-    DSGN.contrastweights{c} = [1 1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'main ten SP'; % CON_0021
-    DSGN.contrastweights{c} = [1 1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'main zero SP vs ten SP'; % CON_0022
-    DSGN.contrastweights{c} = [1 -1 1 -1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'main two SP vs ten SP'; % CON_0023
-    DSGN.contrastweights{c} = [1 -1 1 -1];
-    c=c+1;
-    DSGN.contrastnames{c} = 'main zero SP vs two SP'; % CON_0024
-    DSGN.contrastweights{c} = [1 -1 1 -1];
-    
-    % modulated contrasts
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'bitter high calorie modulated'; % CON_0011
-%     DSGN.contrastweights{c} = [1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'bitter low calorie modulated'; % CON_0012
-%     DSGN.contrastweights{c} = [1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'bitter neutral modulated'; % CON_0013
-%     DSGN.contrastweights{c} = [1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'water modulated'; % CON_0014
-%     DSGN.contrastweights{c} = [1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'sucrose modulated vs water modulated'; % CON_0015
-%     DSGN.contrastweights{c} = [1 -1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'erythritol modulated vs water modulated'; % CON_0016
-%     DSGN.contrastweights{c} = [1 -1];    
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'sucralose modulated vs water modulated'; % CON_0017
-%     DSGN.contrastweights{c} = [1 -1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'sucrose modulated vs sucralose modulated'; % CON_0018
-%     DSGN.contrastweights{c} = [1 -1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'sucrose modulated vs erythritol modulated'; % CON_0019
-%     DSGN.contrastweights{c} = [1 -1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'erythritol modulated vs sucralose modulated'; % CON_0020
-%     DSGN.contrastweights{c} = [1 -1];
-    
+    DSGN.contrastnames{c} = 'placebo feedback ten SP'; % CON_0012
+    DSGN.contrastweights{c} = [1];
     
