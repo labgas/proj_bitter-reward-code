@@ -307,8 +307,8 @@ tasknames_fmriprep = split(string(tasknames{2}),'_'); % fmriprep seems to cut of
     c=0;
     c=c+1;DSGN.conditions{c}={'bit_cue_C0','bit_cue_C2','bit_cue_C10','bit_feedback_C0','bit_feedback_C2_win','bit_feedback_C10_win'};
     c=c+1;DSGN.conditions{c}={'bit_cue_C0','bit_cue_C2','bit_cue_C10','bit_feedback_C0','bit_feedback_C2_win','bit_feedback_C10_win'};
-    c=c+1;DSGN.conditions{c}={'pla_cue_C0','pla_cue_C2','pla_cue_C10','pla_bit_feedback_C0','pla_feedback_C2_win','pla_feedback_C10_win' };
-    c=c+1;DSGN.conditions{c}={'pla_cue_C0','pla_cue_C2','pla_cue_C10', 'pla_bit_feedback_C0','pla_feedback_C2_win','pla_feedback_C10_win'};
+    c=c+1;DSGN.conditions{c}={'pla_cue_C0','pla_cue_C2','pla_cue_C10','pla_feedback_C0','pla_feedback_C2_win','pla_feedback_C10_win' };
+    c=c+1;DSGN.conditions{c}={'pla_cue_C0','pla_cue_C2','pla_cue_C10', 'pla_feedback_C0','pla_feedback_C2_win','pla_feedback_C10_win'};
     
     
     % OPTIONAL FIELDS
@@ -361,7 +361,7 @@ tasknames_fmriprep = split(string(tasknames{2}),'_'); % fmriprep seems to cut of
     DSGN.contrasts{c} = {{'.*pla_cue_C2{1}\s[^x]'}}; % CON_0005
     c=c+1;
     DSGN.contrasts{c} = {{'.*pla_cue_C10{1}\s[^x]'}}; % CON_0006
-    c=c+1
+    c=c+1;
     DSGN.contrasts{c} = {{'.*bit_feedback_C0{1}\s[^x]'}}; % CON_007
     c=c+1;
     DSGN.contrasts{c} = {{'.*bit_feedback_C2_win{1}\s[^x]'}}; % CON_008
@@ -374,17 +374,19 @@ tasknames_fmriprep = split(string(tasknames{2}),'_'); % fmriprep seems to cut of
     c=c+1;
     DSGN.contrasts{c} = {{'.*pla_feedback_C10_win{1}\s[^x]'}}; % CON_012
     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_cue_C0{1}\s[^x]'}}{{'.*bit_cue_C10{1}\s[^x]'}};; % CON_013;
+    DSGN.contrasts{c} = {{'.*bit_cue_C10{1}\s[^x]'} {'.*bit_cue_C0{1}\s[^x]'}}; % CON_013;
     c=c+1;
-    DSGN.contrasts{c} = {{'.*pla_cue_C0{1}\s[^x]'}}{{'.*pla_cue_C10{1}\s[^x]'}};; % CON_014;
+    DSGN.contrasts{c} = {{'.*pla_cue_C10{1}\s[^x]'} {'.*pla_cue_C0{1}\s[^x]'}}; % CON_014;
     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_cue_C10{1}\s[^x]'}}{{'.*bit_feedback_C0{1}\s[^x]'}};; % CON_015;
+    DSGN.contrasts{c} = {{'.*bit_feedback_C10_win{1}\s[^x]'} {'.*bit_feedback_C0{1}\s[^x]'}}; % CON_015;
     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_cue_C10{1}\s[^x]'}}{{'.*bit_feedback_C10_win{1}\s[^x]'}};; % CON_016;
+    DSGN.contrasts{c} = {{'.*pla_feedback_C10_win{1}\s[^x]'} {'.*pla_feedback_C0{1}\s[^x]'}}; % CON_016;
     c=c+1;
-    DSGN.contrasts{c} = {{'.*pla_cue_C10{1}\s[^x]'}}{{'.*pla_feedback_C0{1}\s[^x]'}};; % CON_017;
+    DSGN.contrasts{c} = {{'.*bit_cue_C10{1}\s[^x]'} {'.*bit_cue_C0{1}\s[^x]'} {'.*pla_cue_C10{1}\s[^x]'} {'.*pla_cue_C0{1}\s[^x]'}}; % CON_017;
     c=c+1;
-    DSGN.contrasts{c} = {{'.*pla_cue_C10{1}\s[^x]'}}{{'.*pla_feedback_C10_win{1}\s[^x]'}};; % CON_018;
+    DSGN.contrasts{c} = {{'.*bit_feedback_C10_win{1}\s[^x]'} {'.*bit_feedback_C0{1}\s[^x]'} {'.*pla_feedback_C10_win{1}\s[^x]'} {'.*pla_feedback_C0{1}\s[^x]'}}; % CON_018;
+    
+   
     % OPTIONAL FIELDS
     
     % to define custom contrast names and weights
@@ -429,20 +431,20 @@ tasknames_fmriprep = split(string(tasknames{2}),'_'); % fmriprep seems to cut of
     DSGN.contrastnames{c} = 'placebo feedback ten SP'; % CON_0012
     DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'bitter contrast cue 0 minus cue 10'; % CON_0013
-    DSGN.contrastweights{c} = [1][-1];
+    DSGN.contrastnames{c} = 'bitter contrast cue 10 minus cue 0'; % CON_0013
+    DSGN.contrastweights{c} = [1 -1];
     c=c+1;
-    DSGN.contrastnames{c} = 'placebo contrast cue 0 minus cue 10'; % CON_0014
-    DSGN.contrastweights{c} = [1][-1];
+    DSGN.contrastnames{c} = 'placebo contrast cue 10 minus cue 0'; % CON_0014
+    DSGN.contrastweights{c} = [1 -1]; 
     c=c+1;
-    DSGN.contrastnames{c} = 'bitter contrast cue 10 minus feedback 0'; % CON_0015
-    DSGN.contrastweights{c} = [1][-1];
+    DSGN.contrastnames{c} = 'bitter feedback 10 minus feedback 0'; % CON_0015
+    DSGN.contrastweights{c} = [1 -1];
     c=c+1;
-    DSGN.contrastnames{c} = 'bitter contrast cue 10 minus feedback 10'; % CON_0016
-    DSGN.contrastweights{c} = [1][-1];
+    DSGN.contrastnames{c} = 'bitter feedback 10 minus feedback 10'; % CON_0016
+    DSGN.contrastweights{c} = [1 -1];
     c=c+1;
-    DSGN.contrastnames{c} = 'placebo contrast cue 10 minus feedback 0'; % CON_0017
-    DSGN.contrastweights{c} = [1][-1];
+    DSGN.contrastnames{c} = 'main cue bitter vs placebo'; % CON_0017
+    DSGN.contrastweights{c} = [1 -1 1 -1];
     c=c+1;
-    DSGN.contrastnames{c} = 'placebo contrast cue 10 minus feedback 10'; % CON_0018
-    DSGN.contrastweights{c} = [1][-1];
+    DSGN.contrastnames{c} = 'main feedback bitter vs placebo'; % CON_0018
+    DSGN.contrastweights{c} = [1 -1 1 -1];
