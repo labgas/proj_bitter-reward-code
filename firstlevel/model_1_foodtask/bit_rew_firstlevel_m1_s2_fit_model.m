@@ -1,4 +1,4 @@
-%% bit_rew_firstlevel_s2_fit_model.m
+%% bit_rew_firstlevel_m1_s2_fit_model.m
 %
 % This script does everything to fit and diagnose first level models,
 % more specifically

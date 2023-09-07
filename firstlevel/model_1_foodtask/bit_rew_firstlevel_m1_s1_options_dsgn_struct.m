@@ -345,7 +345,6 @@ tasknames_fmriprep = split(string(tasknames{1}),'_'); % fmriprep seems to cut of
     
     % cell array (one cell per contrast) of contrast definitions
     
-    % unmodulated contrasts
     c=0;
     c=c+1;
     DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'}}; % CON_0001; this regexp will select any beta regressor starting with "bit_high", followed by exactly one white space, but not followed by x - which is only the unmodulated regressors for the high calorie condition
@@ -360,37 +359,23 @@ tasknames_fmriprep = split(string(tasknames{1}),'_'); % fmriprep seems to cut of
     c=c+1;
     DSGN.contrasts{c} = {{'.*pla_neutral{1}\s[^x]'}}; % CON_0006
     c=c+1;
-%     DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*pla_high{1}\s[^x]'}}; % CON_0007
-%     c=c+1;
-%     DSGN.contrasts{c} = {{'.*bit_low{1}\s[^x]'} {'.*pla_low{1}\s[^x]'}}; % CON_0008
-%     c=c+1;
-%     DSGN.contrasts{c} = {{'.*bit_neutral{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0009
-%     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*bit_neutral{1}\s[^x]'}}; % CON_0010
+    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*bit_neutral{1}\s[^x]'}}; % CON_0007
     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_low{1}\s[^x]'} {'.*bit_neutral{1}\s[^x]'}}; % CON_0011
+    DSGN.contrasts{c} = {{'.*bit_low{1}\s[^x]'} {'.*bit_neutral{1}\s[^x]'}}; % CON_0008
     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*bit_low{1}\s[^x]'}}; % CON_0012
+    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*bit_low{1}\s[^x]'}}; % CON_0009
     c=c+1;
-    DSGN.contrasts{c} = {{'.*pla_high{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0013
+    DSGN.contrasts{c} = {{'.*pla_high{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0010
     c=c+1;
-    DSGN.contrasts{c} = {{'.*pla_low{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0014
+    DSGN.contrasts{c} = {{'.*pla_low{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0011
     c=c+1;
-    DSGN.contrasts{c} = {{'.*pla_high{1}\s[^x]'} {'.*pla_low{1}\s[^x]'}}; % CON_0015
+    DSGN.contrasts{c} = {{'.*pla_high{1}\s[^x]'} {'.*pla_low{1}\s[^x]'}}; % CON_0012
     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*bit_neutral{1}\s[^x]'} {'.*pla_high{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0016
+    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*bit_neutral{1}\s[^x]'} {'.*pla_high{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0013
     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_low{1}\s[^x]'} {'.*bit_neutral{1}\s[^x]'} {'.*pla_low{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0017
+    DSGN.contrasts{c} = {{'.*bit_low{1}\s[^x]'} {'.*bit_neutral{1}\s[^x]'} {'.*pla_low{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0014
     c=c+1;
-    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*bit_low{1}\s[^x]'} {'.*pla_high{1}\s[^x]'} {'.*pla_low{1}\s[^x]'}}; % CON_0018
-%     c=c+1;
-%     DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*pla_high{1}\s[^x]'}}; % CON_0019
-%     c=c+1;
-%     DSGN.contrasts{c} = {{'.*bit_low{1}\s[^x]'} {'.*pla_low{1}\s[^x]'}}; % CON_0020
-%     c=c+1;
-%     DSGN.contrasts{c} = {{'.*bit_neutral{1}\s[^x]'} {'.*pla_neutral{1}\s[^x]'}}; % CON_0021
-
-    
+    DSGN.contrasts{c} = {{'.*bit_high{1}\s[^x]'} {'.*bit_low{1}\s[^x]'} {'.*pla_high{1}\s[^x]'} {'.*pla_low{1}\s[^x]'}}; % CON_0015
 
     
     % OPTIONAL FIELDS
@@ -398,7 +383,6 @@ tasknames_fmriprep = split(string(tasknames{1}),'_'); % fmriprep seems to cut of
     % to define custom contrast names and weights
     % not needed strictly in this case, because this will be automatically generated for standard contrasts like this
     
-    % unmodulated
     c=0;
     c=c+1;
     DSGN.contrastnames{c} = 'bitter high calorie'; % CON_0001
@@ -418,60 +402,31 @@ tasknames_fmriprep = split(string(tasknames{1}),'_'); % fmriprep seems to cut of
     c=c+1;
     DSGN.contrastnames{c} = 'placebo neutral'; % CON_0006
     DSGN.contrastweights{c} = [1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'bitter vs placebo high calorie'; % CON_0007
-%     DSGN.contrastweights{c} = [1 -1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'bitter vs placebo low calorie'; % CON_0008
-%     DSGN.contrastweights{c} = [1 -1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'bitter vs placebo neutral'; % CON_0009
-%     DSGN.contrastweights{c} = [1 -1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'bitter high calorie vs neutral'; % CON_0010
-%     DSGN.contrastweights{c} = [1 -1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'bitter low calorie vs neutral'; % CON_0011
-%     DSGN.contrastweights{c} = [1 -1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'bitter high calorie vs low calorie'; % CON_0012
-%     DSGN.contrastweights{c} = [1 -1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'placebo high calorie vs neutral'; % CON_0013
-%     DSGN.contrastweights{c} = [1 -1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'placebo low calorie vs neutral'; % CON_0014
-%     DSGN.contrastweights{c} = [1 -1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'placebo high calorie vs low calorie'; % CON_0015
-%     DSGN.contrastweights{c} = [1 -1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'bitter vs placebo high calorie vs neutral'; % CON_0016
-%     DSGN.contrastweights{c} = [1 -1 -1 1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'bitter vs placebo low calorie vs neutral'; % CON_0017
-%     DSGN.contrastweights{c} = [1 -1 -1 1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'bitter vs placebo high calorie vs low calorie'; % CON_0018
-%     DSGN.contrastweights{c} = [1 -1 -1 1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'main high calorie'; % CON_0019
-%     DSGN.contrastweights{c} = [1 1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'main low calorie'; % CON_0020
-%     DSGN.contrastweights{c} = [1 1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'main neutral'; % CON_0021
-%     DSGN.contrastweights{c} = [1 1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'main high calorie vs neutral'; % CON_0022
-%     DSGN.contrastweights{c} = [1 -1 1 -1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'main low calorie vs neutral'; % CON_0023
-%     DSGN.contrastweights{c} = [1 -1 1 -1];
-%     c=c+1;
-%     DSGN.contrastnames{c} = 'main high calorie vs low calorie'; % CON_0024
-%     DSGN.contrastweights{c} = [1 -1 1 -1];
-    
-   
-    
+    c=c+1;
+    DSGN.contrastnames{c} = 'bitter high calorie vs neutral'; % CON_0007
+    DSGN.contrastweights{c} = [1 -1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'bitter low calorie vs neutral'; % CON_0008
+    DSGN.contrastweights{c} = [1 -1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'bitter high calorie vs low calorie'; % CON_0009
+    DSGN.contrastweights{c} = [1 -1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'placebo high calorie vs neutral'; % CON_0010
+    DSGN.contrastweights{c} = [1 -1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'placebo low calorie vs neutral'; % CON_0011
+    DSGN.contrastweights{c} = [1 -1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'placebo high calorie vs low calorie'; % CON_0012
+    DSGN.contrastweights{c} = [1 -1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'bitter vs placebo high calorie vs neutral'; % CON_0013
+    DSGN.contrastweights{c} = [1 -1 -1 1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'bitter vs placebo low calorie vs neutral'; % CON_0014
+    DSGN.contrastweights{c} = [1 -1 -1 1];
+    c=c+1;
+    DSGN.contrastnames{c} = 'bitter vs placebo high calorie vs low calorie'; % CON_0015
+    DSGN.contrastweights{c} = [1 -1 -1 1];
+        
