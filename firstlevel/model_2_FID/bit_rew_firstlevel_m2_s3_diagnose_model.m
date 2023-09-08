@@ -48,13 +48,17 @@ if LaBGAS_options.display.plotmontages
 
     [~,maskname,maskext] = fileparts(LaBGAS_options.display.mask);
     mask = [maskname,maskext];
+    mask_img = fmri_mask_image(LaBGAS_options.display.mask,'noverbose');
+    target = fullfile(tmapnames(1).folder,tmapnames(1).name);
+    mask_img = resample_space(mask_img,target); % resample mask space to T-map space
+    mask_img.dat(mask_img.dat > 0) = 1; % binarize resampled mask
 
     fprintf('\nShowing results at p < %s %s, k = %s, mask = %s\n',num2str(LaBGAS_options.display.input_threshold),LaBGAS_options.display.thresh_type,num2str(LaBGAS_options.display.k),mask); 
 
         for tmap = 1:size(tmapnames,1)
             tmapspaths{tmap} = fullfile(tmapnames(tmap).folder,tmapnames(tmap).name);
             tmapsobj{tmap} = statistic_image('image_names',tmapspaths{tmap},'type','T','dfe',SPM.xX.erdf);
-            tmapsobj{tmap} = threshold(tmapsobj{tmap},LaBGAS_options.display.input_threshold,LaBGAS_options.display.thresh_type,'k',LaBGAS_options.display.k,'mask',LaBGAS_options.display.mask);
+            tmapsobj{tmap} = threshold(tmapsobj{tmap},LaBGAS_options.display.input_threshold,LaBGAS_options.display.thresh_type,'k',LaBGAS_options.display.k,'mask',mask_img);
             create_figure('fmridisplay');
             wh_montage = 5;
             axis off

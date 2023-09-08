@@ -347,7 +347,6 @@ tasknames_fmriprep = split(string(tasknames{2}),'_'); % fmriprep seems to cut of
     
     % cell array (one cell per contrast) of contrast definitions
     
-    % unmodulated contrasts
     c=0;
     c=c+1;
     DSGN.contrasts{c} = {{'.*bit_cue_C0{1}\s[^x]'}}; % CON_0001; this regexp will select any beta regressor starting with "bit_cue", followed by exactly one white space, but not followed by x - which is only the unmodulated regressors for the cue_0 condition
@@ -392,7 +391,6 @@ tasknames_fmriprep = split(string(tasknames{2}),'_'); % fmriprep seems to cut of
     % to define custom contrast names and weights
     % not needed strictly in this case, because this will be automatically generated for standard contrasts like this
     
-    % unmodulated
     c=0;
     c=c+1;
     DSGN.contrastnames{c} = 'bitter cue 0 SP'; % CON_0001
@@ -428,23 +426,23 @@ tasknames_fmriprep = split(string(tasknames{2}),'_'); % fmriprep seems to cut of
     DSGN.contrastnames{c} = 'placebo feedback 2 SP'; % CON_0011
     DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'placebo feedback ten SP'; % CON_0012
+    DSGN.contrastnames{c} = 'placebo feedback 10 SP'; % CON_0012
     DSGN.contrastweights{c} = [1];
     c=c+1;
-    DSGN.contrastnames{c} = 'bitter contrast cue 10 minus cue 0'; % CON_0013
+    DSGN.contrastnames{c} = 'bitter contrast cue 10 SP minus cue 0 SP'; % CON_0013
     DSGN.contrastweights{c} = [1 -1];
     c=c+1;
-    DSGN.contrastnames{c} = 'placebo contrast cue 10 minus cue 0'; % CON_0014
+    DSGN.contrastnames{c} = 'placebo contrast cue 10 SP minus cue 0 SP'; % CON_0014
     DSGN.contrastweights{c} = [1 -1]; 
     c=c+1;
-    DSGN.contrastnames{c} = 'bitter feedback 10 minus feedback 0'; % CON_0015
+    DSGN.contrastnames{c} = 'bitter feedback 10 SP minus feedback 0 SP'; % CON_0015
     DSGN.contrastweights{c} = [1 -1];
     c=c+1;
-    DSGN.contrastnames{c} = 'bitter feedback 10 minus feedback 10'; % CON_0016
+    DSGN.contrastnames{c} = 'placebo feedback 10 SP minus feedback 0 SP'; % CON_0016
     DSGN.contrastweights{c} = [1 -1];
     c=c+1;
-    DSGN.contrastnames{c} = 'main cue bitter vs placebo'; % CON_0017
-    DSGN.contrastweights{c} = [1 -1 1 -1];
+    DSGN.contrastnames{c} = 'bitter vs placebo cue 10 SP vs cue 0 SP'; % CON_0017
+    DSGN.contrastweights{c} = [1 -1 -1 1];
     c=c+1;
-    DSGN.contrastnames{c} = 'main feedback bitter vs placebo'; % CON_0018
-    DSGN.contrastweights{c} = [1 -1 1 -1];
+    DSGN.contrastnames{c} = 'bitter vs placebo feedback 10 SP minus feedback 0 SP'; % CON_0018
+    DSGN.contrastweights{c} = [1 -1 -1 1];
