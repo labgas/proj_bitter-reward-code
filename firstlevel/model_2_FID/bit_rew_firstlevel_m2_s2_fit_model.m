@@ -1,4 +1,4 @@
-%% bit_rew_firstlevel_s2_fit_model.m
+%% bit_rew_firstlevel_m2_s2_fit_model.m
 %
 % This script does everything to fit and diagnose first level models,
 % more specifically
@@ -230,8 +230,6 @@ firstsubjs = cellstr(char(firstlist(:).name));
 %% LOOP OVER SUBJECTS
 %--------------------------------------------------------------------------
 
-tasknames_fmriprep = split(string(tasknames{1}),'_'); % fmriprep seems to cut off part of taskname after _, hence no use of underscores in tasknames in the future, then this can be omitted and code below changed
-
 for sub = 1:size(derivsubjs,1)
     
     if nr_sess == 1 || ~exist('nr_sess','var')
@@ -242,23 +240,23 @@ for sub = 1:size(derivsubjs,1)
         subjBIDSdir = fullfile(BIDSsubjdirs{sub},'func');
         subjfirstdir = firstsubjdirs{sub};
 
-        BIDSimgs = dir(fullfile(subjBIDSdir,['*' tasknames{1} '*bold.nii.gz']));
+        BIDSimgs = dir(fullfile(subjBIDSdir,['*' tasknames{2} '*bold.nii.gz']));
         BIDSimgs = {BIDSimgs(:).name}';
         BIDSidx = ~contains(BIDSimgs,'rest'); % omit resting state scan if it exists
         BIDSimgs = {BIDSimgs{BIDSidx}}';
 
-        derivimgs = dir(fullfile(subjderivdir,['s6*' char(tasknames_fmriprep(1,:)) '*.nii.gz'])); % change to tasknames{1} if you don't have _ in your taskname
+        derivimgs = dir(fullfile(subjderivdir,['s6*' tasknames{2} '*.nii.gz']));
         derivimgs = {derivimgs(:).name}';
         derividx = ~contains(derivimgs,'rest'); % omit resting state scan if it exists
         derivimgs = {derivimgs{derividx}}';
 
-        fmriprep_noisefiles = dir(fullfile(subjderivdir,['*' char(tasknames_fmriprep(1,:)) '*desc-confounds_timeseries.tsv'])); % change to tasknames{1} if you don't have _ in your taskname
+        fmriprep_noisefiles = dir(fullfile(subjderivdir,['*' tasknames{2} '*desc-confounds_timeseries.tsv'])); % change to tasknames{1} if you don't have _ in your taskname
         fmriprep_noisefiles = {fmriprep_noisefiles(:).name}';
         noiseidx = ~contains(fmriprep_noisefiles,'rest'); % omit resting state scan if it exists
         fmriprep_noisefiles = {fmriprep_noisefiles{noiseidx}}';
 
         % read events.tsv files with onsets, durations, and trial type
-        eventsfiles = dir(fullfile(subjBIDSdir,['*' tasknames{1} '*events.tsv']));
+        eventsfiles = dir(fullfile(subjBIDSdir,['*' tasknames{2} '*events.tsv']));
         eventsfiles = {eventsfiles(:).name}';
 
             for runname = 1:size(fmriprep_noisefiles,1)
@@ -267,7 +265,7 @@ for sub = 1:size(derivsubjs,1)
                 if size(tasknames,1) == 1
                     subjrundirnames{runname} = subjrunnames{runname}(end-4:end);
                 else
-                    subjrundirnames{runname} = [subjrunnames{runname}(end-4:end) '_' char(tasknames_fmriprep(1,:))]; % change to tasknames{1} if you don't have _ in your taskname
+                    subjrundirnames{runname} = [subjrunnames{runname}(end-4:end) '_' tasknames{2}]; % change to tasknames{1} if you don't have _ in your taskname
                 end
             end
 
@@ -300,18 +298,15 @@ for sub = 1:size(derivsubjs,1)
 
             % move fmriprep noisefile and smoothed image into subdir if needed
             rundirlist = dir(rundir);
-            rundirlist = [rundirlist(:).name];
+            rundirlist = rundirlist(~[rundirlist(:).isdir]');
                 if isempty(rundirlist)
                     copyfile(fullfile(subjderivdir,fmriprep_noisefiles{run}),fullfile(rundir,fmriprep_noisefiles{run}));
-                elseif ~contains(rundirlist,fmriprep_noisefiles{run})
-                    copyfile(fullfile(subjderivdir,fmriprep_noisefiles{run}),fullfile(rundir,fmriprep_noisefiles{run}));
-                end
-
-                if isempty(rundirlist)
                     copyfile(fullfile(subjderivdir,derivimgs{run}),fullfile(rundir,derivimgs{run}));
                     gunzip(fullfile(rundir,derivimgs{run}));
                     delete(fullfile(rundir,derivimgs{run}));
-                elseif ~contains(rundirlist,derivimgs{run})
+                elseif ~contains([rundirlist.name],fmriprep_noisefiles{run})
+                    copyfile(fullfile(subjderivdir,fmriprep_noisefiles{run}),fullfile(rundir,fmriprep_noisefiles{run}));
+                elseif ~contains([rundirlist.name],derivimgs{run})
                     copyfile(fullfile(subjderivdir,derivimgs{run}),fullfile(rundir,derivimgs{run}));
                     gunzip(fullfile(rundir,derivimgs{run}));
                     delete(fullfile(rundir,derivimgs{run}));
@@ -925,7 +920,7 @@ for sub = 1:size(derivsubjs,1)
         end % for loop over runs if nr_sess = 1
     
     
-    else % need a smart solution here to put runs of two sessions in one design matrix - probably easiest to keep sessions and runs as separate loops, but add nr_runs_sess{1}1 to index in sess2?
+    else % nr_sess > 1
         
         %% LOOP OVER SESSIONS
         
@@ -937,23 +932,23 @@ for sub = 1:size(derivsubjs,1)
             subjBIDSdir = fullfile(BIDSsubjdirs{sub},['ses-' num2str(ses)],'func');
             subjfirstdir = firstsubjdirs{sub};
 
-            BIDSimgs = dir(fullfile(subjBIDSdir,['*' tasknames{1} '*bold.nii.gz']));
+            BIDSimgs = dir(fullfile(subjBIDSdir,['*' tasknames{2} '*bold.nii.gz']));
             BIDSimgs = {BIDSimgs(:).name}';
             BIDSidx = ~contains(BIDSimgs,'rest'); % omit resting state scan if it exists
             BIDSimgs = {BIDSimgs{BIDSidx}}';
 
-            derivimgs = dir(fullfile(subjderivdir,['s6*' char(tasknames_fmriprep(1,:)) '*.nii.gz'])); % change to tasknames{1} if you don't have _ in your taskname
+            derivimgs = dir(fullfile(subjderivdir,['s6*' tasknames{2} '*.nii.gz']));
             derivimgs = {derivimgs(:).name}';
             derividx = ~contains(derivimgs,'rest'); % omit resting state scan if it exists
             derivimgs = {derivimgs{derividx}}';
 
-            fmriprep_noisefiles = dir(fullfile(subjderivdir,['*' char(tasknames_fmriprep(1,:)) '*desc-confounds_timeseries.tsv'])); % change to tasknames{1} if you don't have _ in your taskname
+            fmriprep_noisefiles = dir(fullfile(subjderivdir,['*' tasknames{2} '*desc-confounds_timeseries.tsv']));
             fmriprep_noisefiles = {fmriprep_noisefiles(:).name}';
             noiseidx = ~contains(fmriprep_noisefiles,'rest'); % omit resting state scan if it exists
             fmriprep_noisefiles = {fmriprep_noisefiles{noiseidx}}';
 
             % read events.tsv files with onsets, durations, and trial type
-            eventsfiles = dir(fullfile(subjBIDSdir,['*' tasknames{1} '*events.tsv']));
+            eventsfiles = dir(fullfile(subjBIDSdir,['*' tasknames{2} '*events.tsv']));
             eventsfiles = {eventsfiles(:).name}';
 
                 for runname = 1:size(fmriprep_noisefiles,1)
@@ -962,7 +957,7 @@ for sub = 1:size(derivsubjs,1)
                     if size(tasknames,1) == 1
                         subjrundirnames{runname} = subjrunnames{runname}(end-4:end);
                     else
-                        subjrundirnames{runname} = [subjrunnames{runname}(end-4:end) '_' char(tasknames_fmriprep(1,:))]; % change to tasknames{1} if you don't have _ in your taskname
+                        subjrundirnames{runname} = [subjrunnames{runname}(end-4:end) '_' tasknames{2}];
                     end
                 end
 
@@ -984,7 +979,7 @@ for sub = 1:size(derivsubjs,1)
                 
             cd(rootdir);
             
-            nr_runs{ses,1} = size(fmriprep_noisefiles,1);
+            nr_runs{ses} = size(fmriprep_noisefiles,1);
 
             %% LOOP OVER RUNS: CREATE NOISE REGRESSORS, ONSETS, DURATIONS, AND PARAMETRIC MODULATORS
     
@@ -997,18 +992,15 @@ for sub = 1:size(derivsubjs,1)
 
                 % move fmriprep noisefile and smoothed image into subdir if needed
                 rundirlist = dir(rundir);
-                rundirlist = [rundirlist(:).name];
+                rundirlist = rundirlist(~[rundirlist(:).isdir]');
                     if isempty(rundirlist)
                         copyfile(fullfile(subjderivdir,fmriprep_noisefiles{run}),fullfile(rundir,fmriprep_noisefiles{run}));
-                    elseif ~contains(rundirlist,fmriprep_noisefiles{run})
-                        copyfile(fullfile(subjderivdir,fmriprep_noisefiles{run}),fullfile(rundir,fmriprep_noisefiles{run}));
-                    end
-
-                    if isempty(rundirlist)
                         copyfile(fullfile(subjderivdir,derivimgs{run}),fullfile(rundir,derivimgs{run}));
                         gunzip(fullfile(rundir,derivimgs{run}));
                         delete(fullfile(rundir,derivimgs{run}));
-                    elseif ~contains(rundirlist,derivimgs{run})
+                    elseif ~contains([rundirlist.name],fmriprep_noisefiles{run})
+                        copyfile(fullfile(subjderivdir,fmriprep_noisefiles{run}),fullfile(rundir,fmriprep_noisefiles{run}));
+                    elseif ~contains([rundirlist.name],derivimgs{run})
                         copyfile(fullfile(subjderivdir,derivimgs{run}),fullfile(rundir,derivimgs{run}));
                         gunzip(fullfile(rundir,derivimgs{run}));
                         delete(fullfile(rundir,derivimgs{run}));
@@ -1224,22 +1216,57 @@ for sub = 1:size(derivsubjs,1)
 
                 % read events.tsv files
                 O = readtable(fullfile(subjBIDSdir,eventsfiles{run}),'FileType', 'text', 'Delimiter', 'tab');
+                idx_nowin = ~contains(O.trial_type,'nowin'); % get rid of no win conditions - study -specific
+                O = O(idx_nowin,:);
+                    for i = 1:height(O)
+                        if contains(O.trial_type(i),'cue')
+                            O.trial_type(i) = replace(O.trial_type(i),'cue ','cue_');
+                        end
+                    end
                 O.trial_type = categorical(O.trial_type);
+                
+                % create run indices for DSGN.conditions/pmods 
+                % to handle missing runs and multiple sessions
+                % NOTE: only works for two runs per session for now!
+                
+                if ses > 1
+                    
+                    prev_ses = ses -1;
+                    
+                    if nr_runs{prev_ses} < size(rundirnames,1)
+                        run_idx_DSGN = nr_runs{prev_ses} + run + (size(rundirnames,1) - nr_runs{prev_ses});
+                    else
+                        run_idx_DSGN = nr_runs{prev_ses} + run;
+                    end
+                    
+                elseif ses == 1
+                    
+                    if nr_runs{ses} < size(rundirnames,1)
+                    
+                        if contains(fmriprep_noisefiles{run},'run-1')
+                            run_idx_DSGN = run;
+                        elseif contains(fmriprep_noisefiles{run},'run-2')
+                            run_idx_DSGN = run + 1;
+                        end
+                        
+                    else
+                        
+                       run_idx_DSGN = run; 
+                        
+                    end
+                    
+                end
 
                 % sanity check #2: conditions
-                if ses > 1
-                    prev_ses = ses - 1;
-                    cat_conds = reordercats(categorical(DSGN.conditions{nr_runs{prev_ses} + run}));
-                else
-                    cat_conds = reordercats(categorical(DSGN.conditions{run}));
-                end
+
+                cat_conds = reordercats(categorical(DSGN.conditions{run_idx_DSGN}));
                 cat_conds = categories(cat_conds);
                 cat_trial_type = cellstr(unique(O.trial_type));
 
                 if sum(contains(cat_conds,cat_trial_type)) ~= size(cat_conds,1)
-                    error('\nconditions in %s include conditions in DSGN structure, please check before proceeding',fmriprep_noisefiles{run})
+                    error('\nconditions in %s do not correspond with conditions in DSGN structure, please check before proceeding',eventsfiles{run})
                 else 
-                    warning('\nconditions in %s include conditions in DSGN structure, continuing',fmriprep_noisefiles{run})
+                    warning('\nconditions in %s correspond with conditions in DSGN structure, continuing',eventsfiles{run})
                 end
 
                 % omit trials that coincide with spikes if that option is chosen
@@ -1252,44 +1279,26 @@ for sub = 1:size(derivsubjs,1)
                     end
 
                 % initialize structures for conditions
-                    for cond = 1:size(DSGN.conditions{1},2)
-                        if ses > 1
-                           prev_ses = ses - 1;
-                           cond_struct{cond} = struct('name',{DSGN.conditions{nr_runs{prev_ses} + run}(cond)}, ...
-                                'onset',{{[]}}, ...
-                                'duration',{{[]}}); 
-                        else
-                            cond_struct{cond} = struct('name',{DSGN.conditions{run}(cond)}, ...
-                                'onset',{{[]}}, ...
-                                'duration',{{[]}});
-                        end
-                    end
 
-                    clear cond
+                for cond = 1:size(DSGN.conditions{run_idx_DSGN},2) 
+                    cond_struct{cond} = struct('name',{DSGN.conditions{run_idx_DSGN}(cond)}, ...
+                    'onset',{{[]}}, ...
+                    'duration',{{[]}}); 
+                end
+
+                clear cond
 
                 % fill structures with onsets and durations
                     for trial = 1:size(O.trial_type,1)
                         cond = 1;
-                        if ses > 1
-                           prev_ses = ses - 1;
-                           while cond < size(DSGN.conditions{nr_runs{prev_ses} + run},2) + 1
-                                if contains(DSGN.conditions{nr_runs{prev_ses} + run}{cond},char(O.trial_type(trial)))
-                                            cond_struct{cond}.onset{1} = [cond_struct{cond}.onset{1},O.onset(trial)];
-                                            cond_struct{cond}.duration{1} = [cond_struct{cond}.duration{1},O.duration(trial)];
-                                end
-                            cond = cond + 1;
+                       while cond < size(DSGN.conditions{run_idx_DSGN},2) + 1
+                            if contains(DSGN.conditions{run_idx_DSGN}{cond},char(O.trial_type(trial)))
+                                        cond_struct{cond}.onset{1} = [cond_struct{cond}.onset{1},O.onset(trial)];
+                                        cond_struct{cond}.duration{1} = [cond_struct{cond}.duration{1},O.duration(trial)];
                             end
-                            continue
-                        else
-                            while cond < size(DSGN.conditions{run},2) + 1
-                                if contains(DSGN.conditions{run}{cond},char(O.trial_type(trial)))
-                                            cond_struct{cond}.onset{1} = [cond_struct{cond}.onset{1},O.onset(trial)];
-                                            cond_struct{cond}.duration{1} = [cond_struct{cond}.duration{1},O.duration(trial)];
-                                end
-                            cond = cond + 1;
-                            end
-                            continue
+                        cond = cond + 1;
                         end
+                        continue
                     end
 
                     clear trial cond
@@ -1329,22 +1338,10 @@ for sub = 1:size(derivsubjs,1)
 
                     ons_durs = cell(1,size(cat_conds,1));
                     
-                        if ses > 1
-                           prev_ses = ses - 1;
-                           
-                           for cond = 1:size(DSGN.conditions{nr_runs{prev_ses} + run},2)
+                           for cond = 1:size(DSGN.conditions{run_idx_DSGN},2)
                                 ons_durs{cond}(:,1) = cond_struct{1,cond}.onset{1};
                                 ons_durs{cond}(:,2) = cond_struct{1,cond}.duration{1};
-                            end
-                           
-                        else
-
-                            for cond = 1:size(DSGN.conditions{run},2)
-                                ons_durs{cond}(:,1) = cond_struct{1,cond}.onset{1};
-                                ons_durs{cond}(:,2) = cond_struct{1,cond}.duration{1};
-                            end
-                            
-                        end
+                           end
 
                         clear cond
 
@@ -1356,8 +1353,8 @@ for sub = 1:size(derivsubjs,1)
                     plotDesign(ons_durs,[],DSGN.tr,'samefig','basisset',hrf_name);
                     ax1 = gca;
                     ax1.TickLabelInterpreter = 'none';
-                    ax1.YTick = [1:size(DSGN.conditions{run},2)];
-                    ax1.YTickLabel = (DSGN.conditions{run});
+                    ax1.YTick = [1:size(DSGN.conditions{run_idx_DSGN},2)];
+                    ax1.YTickLabel = (DSGN.conditions{run_idx_DSGN});
                     ax1.YLabel.String = 'condition';
                     ax1.YLabel.FontSize = 12;
                     ax1.YLabel.FontWeight = 'bold';
@@ -1373,8 +1370,8 @@ for sub = 1:size(derivsubjs,1)
                     colorbar
                     ax2 = gca;
                     ax2.TickLabelInterpreter = 'none';
-                    ax2.XTick = [1:size(DSGN.conditions{run},2)];
-                    ax2.XTickLabel = (DSGN.conditions{run});
+                    ax2.XTick = [1:size(DSGN.conditions{run_idx_DSGN},2)];
+                    ax2.XTickLabel = (DSGN.conditions{run_idx_DSGN});
                     ax2.XTickLabelRotation = 45;
                     ax2.XLabel.String = 'condition';
                     ax2.XLabel.FontSize = 12;
@@ -1398,12 +1395,15 @@ for sub = 1:size(derivsubjs,1)
                 
                 
                 %% PARAMETRIC MODULATORS IF SPECIFIED
-
-                % prep work for parametric modulators
+                
                 if isfield(DSGN,'pmods')
+                    
+                    % prep work for parametric modulators
+                    
                     O.Properties.VariableNames(categorical(O.Properties.VariableNames) == LaBGAS_options.pmods.pmod_name) = {'pmod'};
 
                     mean_pmod_run = mean(O.pmod,'omitnan'); % this demeans pmods per run rather than condition (as spm does), which may be useful in some cases, see https://www.researchgate.net/post/How_to_define_parametric_modulators_for_multiple_conditions_in_SPM
+                        
                         for trial = 1:height(O)
                             if ~isnan(O.pmod(trial))
                                 O.pmod_demean_run(trial) = O.pmod(trial) - mean_pmod_run;
@@ -1412,150 +1412,71 @@ for sub = 1:size(derivsubjs,1)
                             end
                         end
 
-                        clear trial
-                        
-                        if ses > 1
+                    clear trial
                             
-                            prev_ses = ses-1;
-                            
-                            for cond = 1:size(DSGN.pmods{nr_runs{prev_ses} + run},2)
+                        for cond = 1:size(DSGN.pmods{run_idx_DSGN},2)
 
-                                for trial = 1:height(O)
-                                    idx_cond(trial,1) = contains(DSGN.conditions{nr_runs{prev_ses} + run}{cond},char(O.trial_type(trial)));
-                                end
-
-                                mean_pmod_cond{cond} = mean(O.pmod(idx_cond)); % this demeans pmods per condition, as spm does; changed from original script to allow different condition names in different runs, to be tested
-
-                                clear idx_cond
-
-                                for trial = 1:height(O)
-                                    if ~isnan(O.pmod(trial))
-                                        if contains(DSGN.conditions{nr_runs{prev_ses} + run}{cond},char(O.trial_type(trial))) % changed from original script to allow different condition names in different runs, to be tested
-                                            O.pmod_demean_cond(trial) = O.pmod(trial) - mean_pmod_cond{cond};
-                                        else
-                                            continue
-                                        end
-                                    else
-                                        O.pmod_demean_cond(trial) = O.pmod(trial);
-                                    end
-                                end
-
-                                clear trial
-
+                            for trial = 1:height(O)
+                                idx_cond(trial,1) = contains(DSGN.conditions{run_idx_DSGN}{cond},char(O.trial_type(trial)));
                             end
-                            
-                        else
 
-                            for cond = 1:size(DSGN.pmods{run},2)
+                            mean_pmod_cond{cond} = mean(O.pmod(idx_cond)); % this demeans pmods per condition, as spm does; changed from original script to allow different condition names in different runs, to be tested
 
-                                for trial = 1:height(O)
-                                    idx_cond(trial,1) = contains(DSGN.conditions{run}{cond},char(O.trial_type(trial)));
-                                end
+                            clear idx_cond
 
-                                mean_pmod_cond{cond} = mean(O.pmod(idx_cond)); % this demeans pmods per condition, as spm does; changed from original script to allow different condition names in different runs, to be tested
-
-                                clear idx_cond
-
-                                for trial = 1:height(O)
-                                    if ~isnan(O.pmod(trial))
-                                        if contains(DSGN.conditions{run}{cond},char(O.trial_type(trial))) % changed from original script to allow different condition names in different runs, to be tested
-                                            O.pmod_demean_cond(trial) = O.pmod(trial) - mean_pmod_cond{cond};
-                                        else
-                                            continue
-                                        end
+                            for trial = 1:height(O)
+                                if ~isnan(O.pmod(trial))
+                                    if contains(DSGN.conditions{run_idx_DSGN}{cond},char(O.trial_type(trial))) % changed from original script to allow different condition names in different runs, to be tested
+                                        O.pmod_demean_cond(trial) = O.pmod(trial) - mean_pmod_cond{cond};
                                     else
-                                        O.pmod_demean_cond(trial) = O.pmod(trial);
+                                        continue
                                     end
+                                else
+                                    O.pmod_demean_cond(trial) = O.pmod(trial);
                                 end
-
-                                clear trial
-
                             end
-                            
+
+                            clear trial
+
                         end
                         
-                        clear cond
+                    clear cond
 
-                % add pmods to structures for conditions of interest
-                
-                        if ses > 1
-                            
-                            prev_ses = ses-1;
-                            
-                            for pmod = 1:size(DSGN.pmods{nr_runs{prev_ses} + run},2)
-                                cond_struct{pmod}.pmod = struct('name',{DSGN.pmods{nr_runs{prev_ses} + run}(pmod)}, ...
-                                    'param',{{[]}}, ...
-                                    'poly',{{LaBGAS_options.pmods.pmod_polynom}});
-                                pmod_demean_run_struct{pmod}.pmod = struct('name',{strcat(DSGN.pmods{nr_runs{prev_ses} + run}(pmod),'_demeaned_run')}, ...
-                                    'param',{{[]}}, ...
-                                    'poly',{{LaBGAS_options.pmods.pmod_polynom}}); % structure for demeaned pmods per run
-                                pmod_demean_cond_struct{pmod}.pmod = struct('name',{strcat(DSGN.pmods{nr_runs{prev_ses} + run}(pmod),'_demeaned_cond')}, ...
-                                    'param',{{[]}}, ...
-                                    'poly',{{LaBGAS_options.pmods.pmod_polynom}}); % structure for demeaned pmods per condition
-                                    if LaBGAS_options.pmods.pmod_ortho_off
-                                        cond_struct{pmod}.orth = {[0]};
-                                    end
-                            end
-                            
-                        else
-                            
-                            for pmod = 1:size(DSGN.pmods{run},2)
-                                cond_struct{pmod}.pmod = struct('name',{DSGN.pmods{run}(pmod)}, ...
-                                    'param',{{[]}}, ...
-                                    'poly',{{LaBGAS_options.pmods.pmod_polynom}});
-                                pmod_demean_run_struct{pmod}.pmod = struct('name',{strcat(DSGN.pmods{run}(pmod),'_demeaned_run')}, ...
-                                    'param',{{[]}}, ...
-                                    'poly',{{LaBGAS_options.pmods.pmod_polynom}}); % structure for demeaned pmods per run
-                                pmod_demean_cond_struct{pmod}.pmod = struct('name',{strcat(DSGN.pmods{run}(pmod),'_demeaned_cond')}, ...
-                                    'param',{{[]}}, ...
-                                    'poly',{{LaBGAS_options.pmods.pmod_polynom}}); % structure for demeaned pmods per condition
-                                    if LaBGAS_options.pmods.pmod_ortho_off
-                                        cond_struct{pmod}.orth = {[0]};
-                                    end
-                            end
-                        
+                    % add pmods to structures for conditions of interest
+                                
+                        for pmod = 1:size(DSGN.pmods{run_idx_DSGN},2)
+                            cond_struct{pmod}.pmod = struct('name',{DSGN.pmods{run_idx_DSGN}(pmod)}, ...
+                                'param',{{[]}}, ...
+                                'poly',{{LaBGAS_options.pmods.pmod_polynom}});
+                            pmod_demean_run_struct{pmod}.pmod = struct('name',{strcat(DSGN.pmods{run_idx_DSGN}(pmod),'_demeaned_run')}, ...
+                                'param',{{[]}}, ...
+                                'poly',{{LaBGAS_options.pmods.pmod_polynom}}); % structure for demeaned pmods per run
+                            pmod_demean_cond_struct{pmod}.pmod = struct('name',{strcat(DSGN.pmods{run_idx_DSGN}(pmod),'_demeaned_cond')}, ...
+                                'param',{{[]}}, ...
+                                'poly',{{LaBGAS_options.pmods.pmod_polynom}}); % structure for demeaned pmods per condition
+                                if LaBGAS_options.pmods.pmod_ortho_off
+                                    cond_struct{pmod}.orth = {[0]};
+                                end
                         end
 
-                        clear pmod
+                    clear pmod
                         
-                        if ses > 1
+                    % fill pmod fields in structures for conditions of interest
                             
-                            prev_ses = ses-1;
-                            
-                            for trial = 1:size(O.trial_type,1)
-                                pmod = 1;
-                                while pmod < size(DSGN.pmods{nr_runs{prev_ses} + run},2) + 1
-                                    if contains(DSGN.conditions{nr_runs{prev_ses} + run}{pmod},char(O.trial_type(trial))) % changed from original script to allow different condition names in different runs, to be tested
-                                           cond_struct{pmod}.pmod.param{1} = [cond_struct{pmod}.pmod.param{1},O.pmod(trial)];
-                                           pmod_demean_run_struct{pmod}.pmod.param{1} = [pmod_demean_run_struct{pmod}.pmod.param{1},O.pmod_demean_run(trial)];
-                                           pmod_demean_cond_struct{pmod}.pmod.param{1} = [pmod_demean_cond_struct{pmod}.pmod.param{1},O.pmod_demean_cond(trial)];
-                                           if LaBGAS_options.pmods.pmod_ortho_off
-                                               cond_struct{pmod}.orth = {[0]};
-                                           end
-                                    end
-                                pmod = pmod + 1;
+                        for trial = 1:size(O.trial_type,1)
+                            pmod = 1;
+                            while pmod < size(DSGN.pmods{run_idx_DSGN},2) + 1
+                                if contains(DSGN.conditions{run_idx_DSGN}{pmod},char(O.trial_type(trial))) % changed from original script to allow different condition names in different runs, to be tested
+                                       cond_struct{pmod}.pmod.param{1} = [cond_struct{pmod}.pmod.param{1},O.pmod(trial)];
+                                       pmod_demean_run_struct{pmod}.pmod.param{1} = [pmod_demean_run_struct{pmod}.pmod.param{1},O.pmod_demean_run(trial)];
+                                       pmod_demean_cond_struct{pmod}.pmod.param{1} = [pmod_demean_cond_struct{pmod}.pmod.param{1},O.pmod_demean_cond(trial)];
+                                       if LaBGAS_options.pmods.pmod_ortho_off
+                                           cond_struct{pmod}.orth = {[0]};
+                                       end
                                 end
-                                continue
+                            pmod = pmod + 1;
                             end
-                            
-                        else
-
-                            for trial = 1:size(O.trial_type,1)
-                                pmod = 1;
-                                while pmod < size(DSGN.pmods{run},2) + 1
-                                    if contains(DSGN.conditions{run}{pmod},char(O.trial_type(trial))) % changed from original script to allow different condition names in different runs, to be tested
-                                           cond_struct{pmod}.pmod.param{1} = [cond_struct{pmod}.pmod.param{1},O.pmod(trial)];
-                                           pmod_demean_run_struct{pmod}.pmod.param{1} = [pmod_demean_run_struct{pmod}.pmod.param{1},O.pmod_demean_run(trial)];
-                                           pmod_demean_cond_struct{pmod}.pmod.param{1} = [pmod_demean_cond_struct{pmod}.pmod.param{1},O.pmod_demean_cond(trial)];
-                                           if LaBGAS_options.pmods.pmod_ortho_off
-                                               cond_struct{pmod}.orth = {[0]};
-                                           end
-                                    end
-                                pmod = pmod + 1;
-                                end
-                                continue
-                            end
-                        
+                            continue
                         end
 
                         clear pmod trial
@@ -1563,45 +1484,26 @@ for sub = 1:size(derivsubjs,1)
                     % get design matrix and plot
 
                     if LaBGAS_options.display.plotdesign
-                        
-                            if ses > 1
                                 
-                                prev_ses = ses-1;
-                                
-                                ons_durs_int = cell(1,size(DSGN.pmods{nr_runs{prev_ses} + run},2));
-                                pmods_raw = cell(1,size(DSGN.pmods{nr_runs{prev_ses} + run},2));
-                                pmods_demean_run = cell(1,size(DSGN.pmods{nr_runs{prev_ses} + run},2));
-                                pmods_demean_cond = cell(1,size(DSGN.pmods{nr_runs{prev_ses} + run},2));
-                                
-                                for cond = 1:size(DSGN.pmods{nr_runs{prev_ses} + run},2)
-                                        ons_durs_int{cond}(:,1) = cond_struct{cond}.onset{1};
-                                        ons_durs_int{cond}(:,2) = cond_struct{cond}.duration{1};
-                                        pmods_raw{cond}(:,1) = cond_struct{cond}.pmod.param{1};
-                                        pmods_demean_run{cond}(:,1) = pmod_demean_run_struct{cond}.pmod.param{1};
-                                        pmods_demean_cond{cond}(:,1) = pmod_demean_cond_struct{cond}.pmod.param{1};
-                                end
+                        ons_durs_int = cell(1,size(DSGN.pmods{run_idx_DSGN},2));
+                        pmods_raw = cell(1,size(DSGN.pmods{run_idx_DSGN},2));
+                        pmods_demean_run = cell(1,size(DSGN.pmods{run_idx_DSGN},2));
+                        pmods_demean_cond = cell(1,size(DSGN.pmods{run_idx_DSGN},2));
 
-                            else
-
-                                ons_durs_int = cell(1,size(DSGN.pmods{run},2));
-                                pmods_raw = cell(1,size(DSGN.pmods{run},2));
-                                pmods_demean_run = cell(1,size(DSGN.pmods{run},2));
-                                pmods_demean_cond = cell(1,size(DSGN.pmods{run},2));
-                        
-                                for cond = 1:size(DSGN.pmods{run},2)
-                                        ons_durs_int{cond}(:,1) = cond_struct{cond}.onset{1};
-                                        ons_durs_int{cond}(:,2) = cond_struct{cond}.duration{1};
-                                        pmods_raw{cond}(:,1) = cond_struct{cond}.pmod.param{1};
-                                        pmods_demean_run{cond}(:,1) = pmod_demean_run_struct{cond}.pmod.param{1};
-                                        pmods_demean_cond{cond}(:,1) = pmod_demean_cond_struct{cond}.pmod.param{1};
-                                end
-                            
+                            for cond = 1:size(DSGN.pmods{run_idx_DSGN},2)
+                                    ons_durs_int{cond}(:,1) = cond_struct{cond}.onset{1};
+                                    ons_durs_int{cond}(:,2) = cond_struct{cond}.duration{1};
+                                    pmods_raw{cond}(:,1) = cond_struct{cond}.pmod.param{1};
+                                    pmods_demean_run{cond}(:,1) = pmod_demean_run_struct{cond}.pmod.param{1};
+                                    pmods_demean_cond{cond}(:,1) = pmod_demean_cond_struct{cond}.pmod.param{1};
                             end
 
-                            clear cond
+                        clear cond
 
                             switch LaBGAS_options.pmods.pmod_type
+                                
                                 case 'parametric_singleregressor'
+                                    
                                     [X_pmod_raw,~,~,hrf_pmod_raw] = onsets2fmridesign(ons_durs_int,DSGN.tr,nii_hdr.tdim .*DSGN.tr, hrf_name,'parametric_singleregressor',pmods_raw);
 
                                     f2 = figure('WindowState','maximized');
@@ -1613,7 +1515,7 @@ for sub = 1:size(derivsubjs,1)
                                     plot_matrix_cols(zscore(X_pmod_raw(:,1:end-1)),'horizontal',[],colors,3,[0 nii_hdr.tdim]);
                                     ax1 = gca;
                                     ax1.TickLabelInterpreter = 'none';
-                                    ax1.YTick = [1:size(DSGN.pmods{run},2)];
+                                    ax1.YTick = [1:size(DSGN.pmods{run_idx_DSGN},2)];
                                     ax1.YTickLabel = DSGN.pmods{run};
                                     ax1.YLabel.String = 'condition';
                                     ax1.YLabel.FontSize = 12;
@@ -1633,8 +1535,8 @@ for sub = 1:size(derivsubjs,1)
                                     colorbar
                                     ax2 = gca;
                                     ax2.TickLabelInterpreter = 'none';
-                                    ax2.XTick = [1:size(DSGN.pmods{run},2)];
-                                    ax2.XTickLabel = (DSGN.pmods{run});
+                                    ax2.XTick = [1:size(DSGN.pmods{run_idx_DSGN},2)];
+                                    ax2.XTickLabel = (DSGN.pmods{run_idx_DSGN});
                                     ax2.XTickLabelRotation = 45;
                                     ax2.XLabel.String = 'condition';
                                     ax2.XLabel.FontSize = 12;
@@ -1655,6 +1557,7 @@ for sub = 1:size(derivsubjs,1)
                                     clear f2 ax1 ax2
 
                                 case 'parametric_standard'
+                                    
                                     [X_unmod,delta_unmod,delta_hires_unmod,hrf_unmod] = onsets2fmridesign(ons_durs_int,DSGN.tr,nii_hdr.tdim .*DSGN.tr, hrf_name);  
                                     [X_pmod_run,delta,delta_hires,hrf_pmod] = onsets2fmridesign(ons_durs_int,DSGN.tr,nii_hdr.tdim .*DSGN.tr, hrf_name,'parametric_singleregressor',pmods_demean_cond); % unclear what to add as first column in matrix following 'parametric_standard' option
 
@@ -1667,8 +1570,8 @@ for sub = 1:size(derivsubjs,1)
                                     l1 = plot_matrix_cols(zscore(X_unmod(:,1:end-1)),'horizontal',[],colors,3,[0 nii_hdr.tdim]);
                                     ax1 = gca;
                                     ax1.TickLabelInterpreter = 'none';
-                                    ax1.YTick = [1:size(DSGN.pmods{run},2)];
-                                    ax1.YTickLabel = DSGN.conditions{run}(1:size(DSGN.pmods{run},2));
+                                    ax1.YTick = [1:size(DSGN.pmods{run_idx_DSGN},2)];
+                                    ax1.YTickLabel = DSGN.conditions{run_idx_DSGN}(1:size(DSGN.pmods{run_idx_DSGN},2));
                                     ax1.YLabel.String = 'condition';
                                     ax1.YLabel.FontSize = 12;
                                     ax1.YLabel.FontWeight = 'bold';
@@ -1696,8 +1599,8 @@ for sub = 1:size(derivsubjs,1)
                                     colorbar
                                     ax2 = gca;
                                     ax2.TickLabelInterpreter = 'none';
-                                    ax2.XTick = [1:size(DSGN.pmods{run},2)];
-                                    ax2.XTickLabel = DSGN.conditions{run}(1:size(DSGN.pmods{run},2));
+                                    ax2.XTick = [1:size(DSGN.pmods{run_idx_DSGN},2)];
+                                    ax2.XTickLabel = DSGN.conditions{run_idx_DSGN}(1:size(DSGN.pmods{run_idx_DSGN},2));
                                     ax2.XTickLabelRotation = 45;
                                     ax2.XLabel.String = 'condition';
                                     ax2.XLabel.FontSize = 12;
@@ -1716,8 +1619,8 @@ for sub = 1:size(derivsubjs,1)
                                     colorbar
                                     ax3 = gca;
                                     ax3.TickLabelInterpreter = 'none';
-                                    ax3.XTick = [1:size(DSGN.pmods{run},2)];
-                                    ax3.XTickLabel = DSGN.pmods{run};
+                                    ax3.XTick = [1:size(DSGN.pmods{run_idx_DSGN},2)];
+                                    ax3.XTickLabel = DSGN.pmods{run_idx_DSGN};
                                     ax3.XTickLabelRotation = 45;
                                     ax3.XLabel.String = 'condition';
                                     ax3.XLabel.FontSize = 12;
