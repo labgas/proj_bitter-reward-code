@@ -1,4 +1,4 @@
-%% bit_rew_firstlevel_m1_s1_options_dsgn_struct.m
+%% bit_rew_firstlevel_m2_s1_options_dsgn_struct.m
 %
 % This script sets the options and creates a CANlab-style DSGN structure
 % variable, which are used by the subsequent script in the standard LaBGAS
@@ -252,9 +252,6 @@ tasknames = {'food_images';'FID'};
 
 githubrootdir = '/data/master_github_repos';
 
-% split taskname if there is an underscore in it
-tasknames_fmriprep = split(string(tasknames{2}),'_'); % fmriprep seems to cut off part of taskname after _, hence no use of underscores in tasknames in the future, then this can be omitted and code below changed
-
 
 %% CREATE CANLAB DSGN STRUCTURE
 %--------------------------------------------------------------------------    
@@ -278,10 +275,10 @@ tasknames_fmriprep = split(string(tasknames{2}),'_'); % fmriprep seems to cut of
         else
             DSGN.subjects = derivsubjdirs';
         end
-    DSGN.funcnames = {['/ses-1/func/' rundirnames{1} '/s6*ses-1*' char(tasknames_fmriprep(1,:)) '*run-1*.nii'],...
-        ['/ses-1/func/' rundirnames{2} '/s6*ses-1*' char(tasknames_fmriprep(1,:)) '*run-2*.nii'],...
-        ['/ses-2/func/' rundirnames{1} '/s6*ses-2*' char(tasknames_fmriprep(1,:)) '*run-1*.nii'],...
-        ['/ses-2/func/' rundirnames{2} '/s6*ses-2*' char(tasknames_fmriprep(1,:)) '*run-2*.nii']}; % cell array (one cell per session) of paths to functional files, relative to absolute path specified in DSGN.subjects
+    DSGN.funcnames = {['/ses-1/func/' rundirnames{1} '/s6*ses-1*' tasknames{2} '*run-1*.nii'],...
+        ['/ses-1/func/' rundirnames{2} '/s6*ses-1*' tasknames{2} '*run-2*.nii'],...
+        ['/ses-2/func/' rundirnames{1} '/s6*ses-2*' tasknames{2} '*run-1*.nii'],...
+        ['/ses-2/func/' rundirnames{2} '/s6*ses-2*' tasknames{2} '*run-2*.nii']}; % cell array (one cell per session) of paths to functional files, relative to absolute path specified in DSGN.subjects
    
     % OPTIONAL FIELDS
 %     DSGN.concatenation = {[1:6]}; % default: none; cell array of arrays of runs to concatenate; see documentation for when to concatenate, and how it works exactly
