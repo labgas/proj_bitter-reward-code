@@ -1,4 +1,4 @@
-%% a2_set_default_options.m
+%% bit_rew_secondlevel_m1_s1_a2_set_default_options.m
 %
 %
 % USAGE
@@ -38,12 +38,12 @@ dozipimages = false;                                    % default false to avoid
 %% PREP_3A_RUN_SECOND_LEVEL_REGRESSION_AND_SAVE
 % -------------------------------------------------------------------------
 
-maskname_glm = which('gray_matter_mask_sparse.img');    % default use of sparse gray matter mask
+maskname_glm = which('ery_4a_m6_mask_all_regions.nii'); % default use of sparse gray matter mask
                                                             % model-specific maskdir defined in a_set_up_paths_always_run_first script
                                                             % if you do not want to mask, change to []
                                                             % if you want to use a custom mask, put it in maskdir and change name here
                                                             % used in this script only for visualization of unthresholded results
-atlasname_glm = {};                                     % default use of canlab_2018 atlas if left blank
+atlasname_glm = which('ery_4a_m6_mask_all_regions.mat'); % default use of canlab_2018 atlas if left blank
                                                             % if specified, atlas object used for 
                                                             % 1. defining parcels in parcelwise analysis
                                                             % 2. labeling regions in both voxelwise and parcelwise analyses
@@ -120,7 +120,7 @@ dobootstrap_mvpa_reg_cov = false;                                % default false
 %% PREP_3C_RUN_SVMs_ON_CONTRASTS_MASKED 
 % -------------------------------------------------------------------------
 
-ml_method_svm = 'predict';                                      % 'oofmridataobj', or 'predict'
+ml_method_svm = 'oofmridataobj';                                % 'oofmridataobj', or 'predict'
                                                                     % 'oofmridataobj':
                                                                         % use @bogpetre's object-oriented method
                                                                         % https://github.com/canlab/ooFmriDataObjML
@@ -136,7 +136,7 @@ holdout_set_method_svm = 'onesample';                           % 'group', or 'o
                                                                         % subject (i.e. leave whole subject out)
 holdout_set_type_svm = 'kfold';                                 % 'kfold', 'leave_one_subject_out'      holdout set for cross-validation - the latter is not recommended
     nfolds_svm = 5;                                                 % default 5                             number of cross-validation folds for kfold
-maskname_svm = which('gray_matter_mask_sparse.img');            % default sparse gray matter mask
+maskname_svm = which('ery_4a_m6_mask_all_regions.nii');         % default sparse gray matter mask
                                                                     % model-specific maskdir defined in a_set_up_paths_always_run_first script
                                                                     % if you do not want to mask, change to []
                                                                     % if you want to use a custom mask, put it in maskdir and change name here
