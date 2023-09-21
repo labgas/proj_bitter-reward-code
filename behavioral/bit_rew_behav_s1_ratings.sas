@@ -45,12 +45,12 @@ run;
 * CREATE COMBINED TRIAL_TYPE & CONDITION VARIABLE;
 data work.ratings_all;
 set work.ratings_all;
-	if trial_type = 'high calorie' AND condition = 'bitter' then cond_trial_type = 'bitter high calorie';
-	if trial_type = 'low calorie' AND condition = 'bitter' then cond_trial_type = 'bitter low calorie';
-	if trial_type = 'neutral' AND condition = 'bitter' then cond_trial_type = 'bitter neutral';
-	if trial_type = 'high calorie' AND condition = 'saline' then cond_trial_type = 'placebo high calorie';
-	if trial_type = 'low calorie' AND condition = 'saline' then cond_trial_type = 'placebo low calorie';
-	if trial_type = 'neutral' AND condition = 'saline' then cond_trial_type = 'placebo neutral';
+	if trial_type = 'high calorie' AND condition = 'bitter' then cond_trial_type = 'bit_high_calorie';
+	if trial_type = 'low calorie' AND condition = 'bitter' then cond_trial_type = 'bit_low_calorie';
+	if trial_type = 'neutral' AND condition = 'bitter' then cond_trial_type = 'bit_neutral';
+	if trial_type = 'high calorie' AND condition = 'saline' then cond_trial_type = 'pla_high_calorie';
+	if trial_type = 'low calorie' AND condition = 'saline' then cond_trial_type = 'pla_low_calorie';
+	if trial_type = 'neutral' AND condition = 'saline' then cond_trial_type = 'pla_neutral';
 run;
 
 
@@ -277,13 +277,13 @@ proc sort data=work.ratings_means_long;
 by participant_id cond_trial_type;
 run;
 
-proc transpose data=work.ratings_means_long out=work.means_wide_wanting (drop=_NAME_ _LABEL_ rename=(erythritol=rating_erythritol sucralose=rating_sucralose sucrose=rating_sucrose water=rating_water));
+proc transpose data=work.ratings_means_long out=work.means_wide_wanting (drop=_NAME_ rename=(bit_high_calorie=want_bit_high_calorie bit_low_calorie=want_bit_low_calorie bit_neutral=want_bit_neutral pla_high_calorie=want_pla_high_calorie pla_low_calorie=want_pla_low_calorie pla_neutral=want_pla_neutral));
 var wanting;
 by participant_id; 
 id cond_trial_type;
 run;
 
-proc transpose data=work.ratings_means_long out=work.means_wide_liking (drop=_NAME_ _LABEL_ rename=(erythritol=liking_erythritol sucralose=liking_sucralose sucrose=liking_sucrose water=liking_water));
+proc transpose data=work.ratings_means_long out=work.means_wide_liking (drop=_NAME_ rename=(bit_high_calorie=like_bit_high_calorie bit_low_calorie=like_bit_low_calorie bit_neutral=like_bit_neutral pla_high_calorie=like_pla_high_calorie pla_low_calorie=like_pla_low_calorie pla_neutral=like_pla_neutral));
 var liking;
 by participant_id; 
 id cond_trial_type;
@@ -292,7 +292,6 @@ run;
 data work.ratings_means;
 merge work.means_wide_liking work.means_wide_wanting;
 by participant_id;
-*drop liking_water intensity_water concentration_water concentration_sucrose;
 run;
 
 * sanity check;
