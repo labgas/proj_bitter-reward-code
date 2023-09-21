@@ -38,12 +38,12 @@ dozipimages = false;                                    % default false to avoid
 %% PREP_3A_RUN_SECOND_LEVEL_REGRESSION_AND_SAVE
 % -------------------------------------------------------------------------
 
-maskname_glm = which('ery_4a_m6_mask_all_regions.nii'); % default use of sparse gray matter mask
+maskname_glm = which('gray_matter_mask_sparse.img');    % default use of sparse gray matter mask
                                                             % model-specific maskdir defined in a_set_up_paths_always_run_first script
                                                             % if you do not want to mask, change to []
                                                             % if you want to use a custom mask, put it in maskdir and change name here
                                                             % used in this script only for visualization of unthresholded results
-atlasname_glm = which('ery_4a_m6_mask_all_regions.mat'); % default use of canlab_2018 atlas if left blank
+atlasname_glm = {};                                     % default use of canlab_2018 atlas if left blank
                                                             % if specified, atlas object used for 
                                                             % 1. defining parcels in parcelwise analysis
                                                             % 2. labeling regions in both voxelwise and parcelwise analyses
@@ -136,7 +136,7 @@ holdout_set_method_svm = 'onesample';                           % 'group', or 'o
                                                                         % subject (i.e. leave whole subject out)
 holdout_set_type_svm = 'kfold';                                 % 'kfold', 'leave_one_subject_out'      holdout set for cross-validation - the latter is not recommended
     nfolds_svm = 5;                                                 % default 5                             number of cross-validation folds for kfold
-maskname_svm = which('ery_4a_m6_mask_all_regions.nii');         % default sparse gray matter mask
+maskname_svm = which('gray_matter_mask_sparse.img');            % default sparse gray matter mask
                                                                     % model-specific maskdir defined in a_set_up_paths_always_run_first script
                                                                     % if you do not want to mask, change to []
                                                                     % if you want to use a custom mask, put it in maskdir and change name here
@@ -164,7 +164,7 @@ save_figures_svm = false;                                       % default false 
 q_threshold_svm = .05;                                          % threshold for FDR-corrected display items
 p_threshold_svm = .005;                                         % threshold for uncorrected display items
 k_threshold_svm = 50;                                           % extent threshold for both corrected and uncorrected display items
-atlasname_svm = which('ery_4a_m6_mask_all_regions.mat'); % atlas object used for labeling regions
+atlasname_svm = {};                                         % atlas object used for labeling regions
                                                             %   Two options
                                                             %       1. atlas name from load_atlas.m for different atlas than
                                                             %           default canlab_2018 (used if you do not specify this option)
