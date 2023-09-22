@@ -232,7 +232,7 @@ firstsubjs = cellstr(char(firstlist(:).name));
 
 tasknames_fmriprep = split(string(tasknames{1}),'_'); % fmriprep seems to cut off part of taskname after _, hence no use of underscores in tasknames in the future, then this can be omitted and code below changed
 
-for sub = 1:size(derivsubjs,1)
+for sub = [15,17] %1:size(derivsubjs,1)
     
     if nr_sess == 1 || ~exist('nr_sess','var')
         

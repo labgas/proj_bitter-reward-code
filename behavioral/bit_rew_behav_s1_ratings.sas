@@ -294,12 +294,8 @@ merge work.means_wide_liking work.means_wide_wanting;
 by participant_id;
 run;
 
-* sanity check;
-proc univariate data=work.ratings_means;
-var concentration_erythritol concentration_sucralose;
-run;
 
-* simple correlations;
+* simple correlations TO BE ADAPTED;
 proc corr data=work.ratings_means plots=all;
 var concentration_erythritol intensity_erythritol liking_erythritol rating_erythritol hunger;
 run;
@@ -324,11 +320,6 @@ proc corr data=work.ratings_means plots=all;
 var intensity_sucrose intensity_erythritol intensity_sucralose;
 run;
 
-
-* tidy up library;
-*proc datasets library=ery_4a nodetails nolist;
-*delete ratings_means_long means_wide_hunger means_wide_intensity means_wide_liking means_wide_rating;
-*run;
 
 * export to excel/tsv for use in Matlab;
 proc export data=work.ratings_means outfile="&path\ratings_means.tsv" DBMS=TAB;
