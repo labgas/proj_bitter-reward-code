@@ -1,4 +1,4 @@
-%% prep_3_calc_univariate_contrast_maps_and_save.m
+%% bit_rew_secondlevel_m1_s5_prep_3_calc_univariate_contrasts.m
 %
 %
 % *USAGE*
@@ -37,7 +37,7 @@
 %% RUN SCRIPT A_SET_UP_PATHS_ALWAYS_RUN_FIRST AND LOAD/CREATE DAT IF NEEDED
 % -------------------------------------------------------------------------
 
-a_set_up_paths_always_run_first;
+bit_rew_secondlevel_m1_s0_a_set_up_paths_always_run_first;
 
 if ~exist('DAT','var')
     
@@ -47,8 +47,8 @@ if ~exist('DAT','var')
     
     catch
         
-        prep_1_set_conditions_contrasts_colors;
-        prep_1b_prep_behavioral_data;
+        bit_rew_secondlevel_m1_s2_prep_1_set_conditions_contrasts;
+        bit_rew_secondlevel_m1_s3_prep_1b_prep_behavioral_data;
         
     end
     
@@ -62,7 +62,7 @@ if ~exist('DATA_OBJ','var')
     
     catch
         
-        prep_2_load_image_data_and_save;
+        bit_rew_secondlevel_m1_s4_prep_2_load_image_data_and_save;
         
     end
     
@@ -76,7 +76,7 @@ if ~exist('DATA_OBJsc','var')
     
     catch
         
-        prep_2_load_image_data_and_save;
+        bit_rew_secondlevel_m1_s4_prep_2_load_image_data_and_save;
         
     end
     
@@ -137,6 +137,10 @@ end
 % CREATE DATA_OBJ_CON, RESCALE, AND QC
 
 for c = 1:size(DAT.contrasts, 1)
+    
+    fprintf('\n');
+    fprintf('%s\nCONTRAST: %s\n%s\n', dashes, upper(DAT.contrastnames{c}), dashes);
+    fprintf('\n');
     
     % PREP WORK
     % ---------
@@ -288,6 +292,10 @@ end
 % CREATE DATA_OBJ_CONsc, AND QC
 
 for c = 1:size(DAT.contrasts, 1)
+    
+    fprintf('\n');
+    fprintf('%s\nCONTRAST: %s\n%s\n', dashes, upper(DAT.contrastnames{c}), dashes);
+    fprintf('\n');
 
     % PREP
     % ----

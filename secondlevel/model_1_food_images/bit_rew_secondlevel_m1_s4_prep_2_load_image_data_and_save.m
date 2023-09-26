@@ -47,7 +47,7 @@ if ~exist('DAT','var')
     catch
         
         bit_rew_secondlevel_m1_s2_prep_1_set_conditions_contrasts;
-        bit_rew_secondlevel_m1_s3_prep_1b_prep_behavioral_data.m
+        bit_rew_secondlevel_m1_s3_prep_1b_prep_behavioral_data;
         
     end
     
