@@ -1,4 +1,4 @@
-%% prep_3a_run_second_level_regression_and_save.m
+%% bit_rew_secondlevel_m1_s6_prep_3a_run_second_level_regression.m
 %
 %
 % *USAGE*
@@ -154,7 +154,7 @@
 % SET MANDATORY OPTIONS
 
 mygroupnamefield = 'contrasts'; 
-results_suffix = ''; % adds a suffix of your choice to .mat file with results that will be saved
+results_suffix = 'no_cov'; % adds a suffix of your choice to .mat file with results that will be saved
 
 % NOTES 
 %   1. do NOT delete the latter option, leave empty if not needed
@@ -177,7 +177,7 @@ results_suffix = ''; % adds a suffix of your choice to .mat file with results th
 
 % GET MODEL-SPECIFIC PATHS AND OPTIONS
 
-a_set_up_paths_always_run_first;
+bit_rew_secondlevel_m1_s0_a_set_up_paths_always_run_first;
 
 % NOTES 
 %   1. CHANGE THIS TO THE MODEL-SPECIFIC VERSION OF THIS SCRIPT
