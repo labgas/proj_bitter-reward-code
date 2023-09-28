@@ -1,4 +1,4 @@
-%% bit_rew_secondlevel_m1_s6_prep_3a_run_second_level_regression.m
+%% bit_rew_secondlevel_m1_s6a_prep_3a_run_second_level_parcreg.m
 %
 %
 % *USAGE*
@@ -33,7 +33,7 @@
 %
 % *OPTIONS*
 %
-%   NOTE 
+% * NOTE 
 %       defaults are specified in a2_set_default_options for any given model,
 %       but if you want to run the same model with different options (for example
 %       voxel- and parcelwise regression), you can make a copy of this script with
@@ -203,7 +203,7 @@ plugin_get_options_for_analysis_script;
 % maskname_glm = 'mask_name';
 % atlasname_glm = 'atlas_name';
 % dorobust = true/false;
-% dorobfit_parcelwise = true/false;
+dorobfit_parcelwise = true;
 %   csf_wm_covs = true/false;
 %   remove_outliers = true/false;
 % myscaling_glm = 'raw'/'scaled'/'scaled_contrasts';
@@ -785,8 +785,26 @@ for c = 1:kc
 
             tj = get_wh_image(t, j);
             tj = threshold(tj, .05, 'unc'); 
+            
+            datsig = tj.dat(logical(tj.sig));
+            datsigneg = datsig(datsig<0);
+            datsigpos = datsig(datsig>0);
 
-            o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'splitcolor',{[.1 .8 .8] [.1 .1 .8] [.9 .4 0] [1 1 0]});
+                if isempty(datsigneg) && ~isempty(datsigpos)
+
+                    o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.9 .4 0], 'maxcolor', [1 1 0], 'cmaprange', [min(datsigpos) max(datsigpos)]);
+
+                elseif isempty(datsigpos) && ~isempty(datsigneg)
+
+                    o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.1 .8 .8], 'maxcolor', [.1 .1 .8], 'cmaprange', [min(datsigneg) max(datsigneg)]);
+
+                else
+
+                    o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'splitcolor',{[.1 .8 .8] [.1 .1 .8] [.9 .4 0] [1 1 0]}, 'cmaprange', [min(datsigneg) max(datsigneg) min(datsigpos) max(datsigpos)]);
+
+                end
+                
+            o2 = legend(o2);    
             o2 = title_montage(o2, 2*j, [regression_stats.contrastname ' ' regression_stats.variable_names{j} ' ' mask_string ' ' scaling_string]);
 
         end
@@ -813,13 +831,31 @@ for c = 1:kc
             
             for img = 1:size(BF,2)
                 
-                 if exist('maskname_short','var')
+                if exist('maskname_short','var')
                     BF(img) = apply_mask(BF(img),glmmask);
                 end
                 
                 BF(img) = threshold(BF(img),[-2.1972 2.1972],'raw-outside');
+                
+                datsig = BF(img).dat(logical(BF(img).sig));
+                datsigneg = datsig(datsig<0);
+                datsigpos = datsig(datsig>0);
+                
+                if isempty(datsigneg) && ~isempty(datsigpos)
                     
-                o2 = addblobs(o2, region(BF(img)), 'wh_montages', (2*img)-1:2*img, 'splitcolor', {[.25 0 0] [1 0 0] [0 0.25 0] [0 1 0]}); % red in favor of H0, green in favor of H1 for BF maps
+                    o2 = addblobs(o2, region(BF(img)), 'wh_montages', (2*j)-1:2*j, 'mincolor',[0 0.25 0], 'maxcolor', [0 1 0], 'cmaprange', [min(datsigpos) max(datsigpos)]);
+                    
+                elseif isempty(datsigpos) && ~isempty(datsigneg)
+                    
+                    o2 = addblobs(o2, region(BF(img)), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.25 0 0], 'maxcolor', [1 0 0], 'cmaprange', [min(datsigneg) max(datsigneg)]);
+                    
+                else
+                
+                    o2 = addblobs(o2, region(BF(img)), 'wh_montages', (2*j)-1:2*j, 'splitcolor',{[.25 0 0] [1 0 0] [0 0.25 0] [0 1 0]}, 'cmaprange', [min(datsigneg) max(datsigneg) min(datsigpos) max(datsigpos)]); % red in favor of H0, green in favor of H1 for BF maps
+                    
+                end
+                
+                o2 = legend(o2);
                 o2 = title_montage(o2, 2*img, [regression_stats.contrastname ' ' regression_stats.variable_names{img} ' ' mask_string ' ' scaling_string]);
             
             end
@@ -986,9 +1022,27 @@ for c = 1:kc
         for j = 1:num_effects
 
             tj = get_wh_image(parcelwise_stats.t_obj, j);
-            tj = threshold(tj, .05, 'unc'); 
+            tj = threshold(tj, .05, 'unc');
+            
+            datsig = tj.dat(logical(tj.sig));
+            datsigneg = datsig(datsig<0);
+            datsigpos = datsig(datsig>0);
 
-            o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'splitcolor',{[.1 .8 .8] [.1 .1 .8] [.9 .4 0] [1 1 0]});
+                if isempty(datsigneg) && ~isempty(datsigpos)
+
+                    o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.9 .4 0], 'maxcolor', [1 1 0], 'cmaprange', [min(datsigpos) max(datsigpos)]);
+
+                elseif isempty(datsigpos) && ~isempty(datsigneg)
+
+                    o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.1 .8 .8], 'maxcolor', [.1 .1 .8], 'cmaprange', [min(datsigneg) max(datsigneg)]);
+
+                else
+
+                    o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'splitcolor',{[.1 .8 .8] [.1 .1 .8] [.9 .4 0] [1 1 0]}, 'cmaprange', [min(datsigneg) max(datsigneg) min(datsigpos) max(datsigpos)]);
+
+                end
+                
+            o2 = legend(o2);   
             o2 = title_montage(o2, 2*j, [parcelwise_stats.contrastname ' ' parcelwise_stats.variable_names{j} ' ' mask_string ' ' scaling_string]);
 
         end
@@ -1014,8 +1068,26 @@ for c = 1:kc
             for img = 1:size(parcelwise_stats.BF,2)
                 
                 BF = threshold(parcelwise_stats.BF(1,img),[-2.1972 2.1972],'raw-outside');
+                
+                datsig = BF.dat(logical(BF.sig));
+                datsigneg = datsig(datsig<0);
+                datsigpos = datsig(datsig>0);
+                
+                if isempty(datsigneg) && ~isempty(datsigpos)
                     
-                o2 = addblobs(o2, region(BF), 'wh_montages', (2*img)-1:2*img, 'splitcolor', {[.25 0 0] [1 0 0] [0 0.25 0] [0 1 0]}); % red in favor of H0, green in favor of H1 for BF maps
+                    o2 = addblobs(o2, region(BF), 'wh_montages', (2*img)-1:2*img, 'mincolor',[0 0.25 0], 'maxcolor', [0 1 0], 'cmaprange', [min(datsigpos) max(datsigpos)]);
+                    
+                elseif isempty(datsigpos) && ~isempty(datsigneg)
+                    
+                    o2 = addblobs(o2, region(BF), 'wh_montages', (2*img)-1:2*img, 'mincolor',[.25 0 0], 'maxcolor', [1 0 0], 'cmaprange', [min(datsigneg) max(datsigneg)]);
+                    
+                else
+                
+                    o2 = addblobs(o2, region(BF), 'wh_montages', (2*img)-1:2*img, 'splitcolor',{[.25 0 0] [1 0 0] [0 0.25 0] [0 1 0]}, 'cmaprange', [min(datsigneg) max(datsigneg) min(datsigpos) max(datsigpos)]); % red in favor of H0, green in favor of H1 for BF maps
+                    
+                end
+                
+                o2 = legend(o2);
                 o2 = title_montage(o2, 2*img, [parcelwise_stats.contrastname ' ' parcelwise_stats.variable_names{img} ' ' mask_string ' ' scaling_string]);
             
             end
