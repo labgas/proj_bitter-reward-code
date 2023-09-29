@@ -1,4 +1,4 @@
-%% bit_rew_secondlevel_m1_s7a_c2a_second_level_parcreg.m
+%% bit_rew_secondlevel_m1_s7b_c2a_second_lvl_parcreg_want.m
 %
 %
 % *USAGE*
@@ -103,11 +103,11 @@ bit_rew_secondlevel_m1_s0_a_set_up_paths_always_run_first;
 % Mandatory options from prep_3a script
 
 mygroupnamefield = 'contrasts'; 
-results_suffix = 'no_cov'; % suffix of your choice added to .mat file with saved results
+results_suffix = 'want'; % suffix of your choice added to .mat file with saved results
 
 % Options to copy if specified in prep_3a script
 
-% covs2use = {'varname1'};
+covs2use = {'delta_wanting'};
 % group_id = {'varname2'};
 
 % Custom options from prep_3a script
@@ -119,7 +119,7 @@ dorobfit_parcelwise = true;
 % atlasname_glm = 'atlas_name';
 % maskname_glm = 'mask_name';
 % myscaling_glm = 'raw'/'scaled'/'scaled_contrasts';
-% design_matrix_type = 'custom'/'group'/'onesample';
+design_matrix_type = 'custom';
 % doBayes = true/false;
 % domvpa_reg_cov = true/false;
 %   algorithm_mvpa_reg_cov = 'cv_pcr'/'cv_pls'/etc;
