@@ -124,9 +124,6 @@ for sig = 1:size(keyword_sigs,2)
     printhdr(['APPLYING SIGNATURE ', upper(signame), ' ON ', upper(myscaling_sigs), ' CONDITIONS AND CONTRASTS, SIMILARITY METRIC ', similarity_metric_sigs]);
 
     fprintf('\n\n');
-
-    % CONDITIONS
-    % ----------
     
     if contains(keyword_sigs{sig},filesep) % path to image rather than keyword
 
