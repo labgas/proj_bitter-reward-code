@@ -100,38 +100,14 @@ end
 
 behavioral_data_table = readtable(behavioral_fname_path,'TreatAsEmpty','n/a','FileType','text','Delimiter','tab'); % read .tsv file into Matlab table variable
 
+% CONDITIONS
 
-% CALCULATE CONTRASTS ON RATINGS AND Z-SCORE
-
-% calculate contrasts between conditions for ratings, and zscore them, for
-% use as second-level covariates in contrast analyses
-% NOTES: 
+% NOTES:
 %   respect the order of raw variables in table
-%   respect the order of DAT.contrastnames defined in prep_1
-%   include contrasts with conditions for which ratings do not exist (i.e.
-%       have NaN), this makes life easier to convert to between table in
-%       section below
+%   respect the order of DAT.conditions defined in prep_1
+%   no z-scoring needed for conditions with all NaN ratings
 
-behavioral_data_table.like_bit_high_neu = zscore((behavioral_data_table.like_bit_high_calorie - behavioral_data_table.like_bit_neutral),0);
-behavioral_data_table.like_bit_low_neu = zscore((behavioral_data_table.like_bit_low_calorie - behavioral_data_table.like_bit_neutral),0);
-behavioral_data_table.like_bit_high_low = zscore((behavioral_data_table.like_bit_high_calorie - behavioral_data_table.like_bit_low_calorie),0,'omitnan');
-behavioral_data_table.like_pla_high_neu = zscore((behavioral_data_table.like_pla_high_calorie - behavioral_data_table.like_pla_neutral),0);
-behavioral_data_table.like_pla_low_neu = zscore((behavioral_data_table.like_pla_low_calorie - behavioral_data_table.like_pla_neutral),0);
-behavioral_data_table.like_pla_high_low = zscore((behavioral_data_table.like_pla_high_calorie - behavioral_data_table.like_pla_low_calorie),0,'omitnan');
-behavioral_data_table.like_bit_pla_high_neu = zscore((behavioral_data_table.like_bit_high_calorie - behavioral_data_table.like_bit_neutral - behavioral_data_table.like_pla_high_calorie + behavioral_data_table.like_pla_neutral),0);
-behavioral_data_table.like_bit_pla_low_neu = zscore((behavioral_data_table.like_bit_low_calorie - behavioral_data_table.like_bit_neutral - behavioral_data_table.like_pla_low_calorie + behavioral_data_table.like_pla_neutral),0);
-behavioral_data_table.like_bit_pla_high_low = zscore((behavioral_data_table.like_bit_high_calorie - behavioral_data_table.like_bit_low_calorie - behavioral_data_table.like_pla_high_calorie + behavioral_data_table.like_pla_low_calorie),0,'omitnan');
-behavioral_data_table.want_bit_high_neu = zscore((behavioral_data_table.want_bit_high_calorie - behavioral_data_table.want_bit_neutral),0,'omitnan');
-behavioral_data_table.want_bit_low_neu = zscore((behavioral_data_table.want_bit_low_calorie - behavioral_data_table.want_bit_neutral),0,'omitnan');
-behavioral_data_table.want_bit_high_low = zscore((behavioral_data_table.want_bit_high_calorie - behavioral_data_table.want_bit_low_calorie),0,'omitnan');
-behavioral_data_table.want_pla_high_neu = zscore((behavioral_data_table.want_pla_high_calorie - behavioral_data_table.want_pla_neutral),0,'omitnan');
-behavioral_data_table.want_pla_low_neu = zscore((behavioral_data_table.want_pla_low_calorie - behavioral_data_table.want_pla_neutral),0,'omitnan');
-behavioral_data_table.want_pla_high_low = zscore((behavioral_data_table.want_pla_high_calorie - behavioral_data_table.want_pla_low_calorie),0,'omitnan');
-behavioral_data_table.want_bit_pla_high_neu = zscore((behavioral_data_table.want_bit_high_calorie - behavioral_data_table.want_bit_neutral - behavioral_data_table.want_pla_high_calorie + behavioral_data_table.want_pla_neutral),0,'omitnan');
-behavioral_data_table.want_bit_pla_low_neu = zscore((behavioral_data_table.want_bit_low_calorie - behavioral_data_table.want_bit_neutral - behavioral_data_table.want_pla_low_calorie + behavioral_data_table.want_pla_neutral),0,'omitnan');
-behavioral_data_table.want_bit_pla_high_low = zscore((behavioral_data_table.want_bit_high_calorie - behavioral_data_table.want_bit_low_calorie - behavioral_data_table.want_pla_high_calorie + behavioral_data_table.want_pla_low_calorie),0,'omitnan');
-
-% zscore ratings per condition, for use as second-level covariates in condition analyses
+% z-score simple conditions already present in table
 behavioral_data_table.like_bit_high_calorie = zscore(behavioral_data_table.like_bit_high_calorie,0,'omitnan');
 behavioral_data_table.like_bit_low_calorie = zscore(behavioral_data_table.like_bit_low_calorie,0,'omitnan');
 % behavioral_data_table.like_bit_neutral = zscore(behavioral_data_table.like_bit_neutral,0,'omitnan');
@@ -144,6 +120,45 @@ behavioral_data_table.want_bit_neutral = zscore(behavioral_data_table.want_bit_n
 behavioral_data_table.want_pla_high_calorie = zscore(behavioral_data_table.want_pla_high_calorie,0,'omitnan');
 behavioral_data_table.want_pla_low_calorie = zscore(behavioral_data_table.want_pla_low_calorie,0,'omitnan');
 behavioral_data_table.want_pla_neutral = zscore(behavioral_data_table.want_pla_neutral,0,'omitnan');
+
+% calculate and z-score "complex" conditions
+behavioral_data_table.like_bit_high_neu = zscore((behavioral_data_table.like_bit_high_calorie - behavioral_data_table.like_bit_neutral),0);
+% no omitnan when conditions with NaN ratings are included
+behavioral_data_table.like_bit_low_neu = zscore((behavioral_data_table.like_bit_low_calorie - behavioral_data_table.like_bit_neutral),0);
+behavioral_data_table.like_bit_high_low = zscore((behavioral_data_table.like_bit_high_calorie - behavioral_data_table.like_bit_low_calorie),0,'omitnan');
+behavioral_data_table.like_pla_high_neu = zscore((behavioral_data_table.like_pla_high_calorie - behavioral_data_table.like_pla_neutral),0);
+behavioral_data_table.like_pla_low_neu = zscore((behavioral_data_table.like_pla_low_calorie - behavioral_data_table.like_pla_neutral),0);
+behavioral_data_table.like_pla_high_low = zscore((behavioral_data_table.like_pla_high_calorie - behavioral_data_table.like_pla_low_calorie),0,'omitnan');
+behavioral_data_table.want_bit_high_neu = zscore((behavioral_data_table.want_bit_high_calorie - behavioral_data_table.want_bit_neutral),0,'omitnan');
+behavioral_data_table.want_bit_low_neu = zscore((behavioral_data_table.want_bit_low_calorie - behavioral_data_table.want_bit_neutral),0,'omitnan');
+behavioral_data_table.want_bit_high_low = zscore((behavioral_data_table.want_bit_high_calorie - behavioral_data_table.want_pla_high_calorie),0,'omitnan');
+behavioral_data_table.want_pla_high_neu = zscore((behavioral_data_table.want_pla_high_calorie - behavioral_data_table.want_pla_neutral),0,'omitnan');
+behavioral_data_table.want_pla_low_neu = zscore((behavioral_data_table.want_pla_low_calorie - behavioral_data_table.want_pla_neutral),0,'omitnan');
+behavioral_data_table.want_pla_high_low = zscore((behavioral_data_table.want_pla_high_calorie - behavioral_data_table.want_pla_low_calorie),0,'omitnan');
+
+% CALCULATE CONTRASTS AND Z-SCORE
+
+% calculate contrasts between conditions for ratings, and zscore them, for
+% use as second-level covariates in contrast analyses
+% NOTES: 
+%   respect the order of raw variables in table
+%   respect the order of DAT.contrastnames defined in prep_1
+%   include contrasts with conditions for which ratings do not exist (i.e.
+%       have NaN), this makes life easier to convert to between table in
+%       section below
+
+behavioral_data_table.like_bit_pla_high = zscore((behavioral_data_table.like_bit_high_calorie - behavioral_data_table.like_pla_high_calorie),0,'omitnan');
+behavioral_data_table.like_bit_pla_low = zscore((behavioral_data_table.like_bit_low_calorie - behavioral_data_table.like_pla_low_calorie),0,'omitnan');
+behavioral_data_table.like_bit_pla_neu = zscore((behavioral_data_table.like_bit_neutral - behavioral_data_table.like_pla_neutral),0);
+behavioral_data_table.like_bit_pla_high_neu = zscore((behavioral_data_table.like_bit_high_calorie - behavioral_data_table.like_bit_neutral - behavioral_data_table.like_pla_high_calorie + behavioral_data_table.like_pla_neutral),0);
+behavioral_data_table.like_bit_pla_low_neu = zscore((behavioral_data_table.like_bit_low_calorie - behavioral_data_table.like_bit_neutral - behavioral_data_table.like_pla_low_calorie + behavioral_data_table.like_pla_neutral),0);
+behavioral_data_table.like_bit_pla_high_low = zscore((behavioral_data_table.like_bit_high_calorie - behavioral_data_table.like_bit_low_calorie - behavioral_data_table.like_pla_high_calorie + behavioral_data_table.like_pla_low_calorie),0,'omitnan');
+behavioral_data_table.want_bit_pla_high = zscore((behavioral_data_table.want_bit_low_calorie - behavioral_data_table.want_pla_low_calorie),0,'omitnan');
+behavioral_data_table.want_bit_pla_low = zscore((behavioral_data_table.want_bit_low_calorie - behavioral_data_table.want_pla_low_calorie),0,'omitnan');
+behavioral_data_table.want_bit_pla_neu = zscore((behavioral_data_table.want_bit_neutral - behavioral_data_table.want_pla_neutral),0,'omitnan');
+behavioral_data_table.want_bit_pla_high_neu = zscore((behavioral_data_table.want_bit_high_calorie - behavioral_data_table.want_bit_neutral - behavioral_data_table.want_pla_high_calorie + behavioral_data_table.want_pla_neutral),0,'omitnan');
+behavioral_data_table.want_bit_pla_low_neu = zscore((behavioral_data_table.want_bit_low_calorie - behavioral_data_table.want_bit_neutral - behavioral_data_table.want_pla_low_calorie + behavioral_data_table.want_pla_neutral),0,'omitnan');
+behavioral_data_table.want_bit_pla_high_low = zscore((behavioral_data_table.want_bit_high_calorie - behavioral_data_table.want_bit_low_calorie - behavioral_data_table.want_pla_high_calorie + behavioral_data_table.want_pla_low_calorie),0,'omitnan');
 
 
 % TRIAL-BY-TRIAL RATINGS
@@ -209,7 +224,7 @@ DAT.BETWEENPERSON.conditions = cell(1, length(DAT.conditions));
 % Table of [n images in contrast x q variables]
 % names in table can be any valid name.
 
-DAT.BETWEENPERSON.contrasts = cell(1, length(DAT.contrastnames));
+DAT.BETWEENPERSON.contrasts = cell(1, size(DAT.contrastnames,2));
 [DAT.BETWEENPERSON.contrasts{:}] = deal(table());  % empty tables
 
 
@@ -225,18 +240,25 @@ DAT.BETWEENPERSON.contrasts = cell(1, length(DAT.contrastnames));
 id = DAT.BEHAVIOR.behavioral_data_table.participant_id;
 covs = DAT.BEHAVIOR.behavioral_data_table.Properties.VariableNames(contains(DAT.BEHAVIOR.behavioral_data_table.Properties.VariableNames,'like') | contains(DAT.BEHAVIOR.behavioral_data_table.Properties.VariableNames,'want'));
 
-for cond = 1:size(DAT.conditions,2)
-    if ~contains(covs{cond},'neutral') % neutral conditions have NaN for liking
+for cond = 1:size(DAT.conditions,2)/2
+    if ~contains(covs{cond},'neutral') && ~contains(covs{cond},'neu') % neutral conditions have NaN for liking
     DAT.BETWEENPERSON.conditions{cond}.liking = DAT.BEHAVIOR.behavioral_data_table.(covs{cond}); 
     end
     DAT.BETWEENPERSON.conditions{cond}.wanting = DAT.BEHAVIOR.behavioral_data_table.(covs{cond+6});
 end
 
+for cond = (size(DAT.conditions,2)/2)+1:size(DAT.conditions,2)
+    if ~contains(covs{cond+6},'neutral') && ~contains(covs{cond+6},'neu') % neutral conditions have NaN for liking
+    DAT.BETWEENPERSON.conditions{cond}.liking = DAT.BEHAVIOR.behavioral_data_table.(covs{cond+6}); 
+    end
+    DAT.BETWEENPERSON.conditions{cond}.wanting = DAT.BEHAVIOR.behavioral_data_table.(covs{cond+12});
+end
+
 for cont = 1:size(DAT.contrasts,1)
     if ~contains(covs{(size(DAT.conditions,2)*2)+cont},'neu') % neutral contrasts have NaN for liking
-        DAT.BETWEENPERSON.contrasts{cont}.delta_liking = DAT.BEHAVIOR.behavioral_data_table.(covs{(size(DAT.conditions,2)*2)+cont});
+        DAT.BETWEENPERSON.contrasts{cont}.delta_liking = DAT.BEHAVIOR.behavioral_data_table.(covs{((size(DAT.conditions,2))*2)+cont});
     end
-    DAT.BETWEENPERSON.contrasts{cont}.delta_wanting = DAT.BEHAVIOR.behavioral_data_table.(covs{(size(DAT.conditions,2)*2)+cont+9});
+    DAT.BETWEENPERSON.contrasts{cont}.delta_wanting = DAT.BEHAVIOR.behavioral_data_table.(covs{((size(DAT.conditions,2))*2)+cont+6});
 end
 
 

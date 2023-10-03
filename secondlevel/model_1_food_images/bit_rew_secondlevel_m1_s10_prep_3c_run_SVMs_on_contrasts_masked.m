@@ -1,4 +1,4 @@
-%% prep_3c_run_SVMs_on_contrasts_masked.m
+%% bit_rew_secondlevel_m1_s10_prep_3c_run_SVMs_on_contrasts_masked.m
 %
 %
 % *USAGE*
@@ -123,7 +123,7 @@ results_suffix = ''; % adds a suffix of your choice to .mat file with results th
 
 % GET MODEL-SPECIFIC PATHS AND OPTIONS
 
-a_set_up_paths_always_run_first;
+bit_rew_secondlevel_m1_s0_a_set_up_paths_always_run_first;
 
 % NOTES
 %   1. CHANGE THIS TO THE MODEL-SPECIFIC VERSION OF THIS SCRIPT!
@@ -344,10 +344,21 @@ for c = 1:kc
     % 2. assume that subjects are in same position in each input file!
             
     cat_obj.Y = outcome_value;
-    cat_obj.metadata_table.subject_id = [[1:(size(cat_obj.Y,1)/2)]';[1:(size(cat_obj.Y,1)/2)]'];
+    
+    cat_obj.metadata_table.subject_id = zeros(size(cat_obj.Y,1),1);
+    
+    if strcmp(holdout_set_method_svm,'group')
+        cat_obj.metadata_table.group_id = zeros(size(cat_obj.Y,1),1);
+    end
+    
+    con = 1;
+    while con < size(wh,2)+1
+        cat_obj.metadata_table.subject_id(((con-1)*(size(cat_obj.Y,1)/size(wh,2))+1):con*(size(cat_obj.Y,1)/size(wh,2))) = [1:(size(cat_obj.Y,1)/size(wh,2))]';
         if strcmp(holdout_set_method_svm,'group')
-            cat_obj.metadata_table.group_id = [group';group'];      
+            cat_obj.metadata_table.group_id(((con-1)*(size(cat_obj.Y,1)/size(wh,2))+1):con*(size(cat_obj.Y,1)/size(wh,2))) = group; % not yet tested on a dataset with groups      
         end
+        con = con+1;
+    end
     
     % SANITY CHECK ON OUTCOME
     

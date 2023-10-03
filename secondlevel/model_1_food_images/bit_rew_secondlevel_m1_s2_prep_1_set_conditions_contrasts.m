@@ -20,8 +20,8 @@
 % date:   Dartmouth, May, 2022
 %
 %__________________________________________________________________________
-% @(#)% prep_1_set_conditions_contrasts_colors.m         v1.0
-% last modified: 2022/05/16
+% @(#)% prep_1_set_conditions_contrasts_colors.m         v1.1
+% last modified: 2023/09/21
 %
 %
 %% RUN SCRIPT A_SET_UP_PATHS_ALWAYS_RUN_FIRST
@@ -79,10 +79,13 @@ DAT = struct();
 % DSGN.conditions!
 
 % DAT.conditions = {'sucrose' 'erythritol' 'sucralose' 'water'};
-DAT.conditions = [DSGN.conditions{1}(1:3) DSGN.conditions{3}(1:3)]; 
+DAT.conditions = DSGN.contrastnames(1:12); 
 % @lukasvo76: only use if 
 % 1) first-level conditions are the same in every run
 % 2) all first-level conditions are of interest at second level
+%
+% NOTE: in a design with different sessions like this, specify everything
+% within-session as condition!
 
 DAT.conditions = format_strings_for_legend(DAT.conditions);
 
@@ -124,7 +127,7 @@ DAT.conditions = format_strings_for_legend(DAT.conditions);
 % condition. 
 % If you do not have subfolders, it is OK to leave this empty, i.e., DAT.subfolders = {};
 
-DAT.subfolders = {'*' '*' '*' '*' '*' '*'}; % @lukasvo76: default option for Linux OS, one wildcard per condition
+DAT.subfolders = {'*' '*' '*' '*' '*' '*' '*' '*' '*' '*' '*' '*'}; % @lukasvo76: default option for Linux OS, one wildcard per condition
 % DAT.subfolders = {}; % @lukasvo76 fallback option for Windows OS, uses recursive spm_select in prep_2 script to select right con images
 
 % Names of wildcard (expression with *, [1-9], 
@@ -133,7 +136,7 @@ DAT.subfolders = {'*' '*' '*' '*' '*' '*'}; % @lukasvo76: default option for Lin
 % condition. 
 
 DAT.structural_wildcard = {};
-DAT.functional_wildcard = {'con_0001.nii' 'con_0002.nii' 'con_0003.nii' 'con_0004.nii' 'con_0005.nii' 'con_0006.nii'}; %lukavo76: default option for Linux OS
+DAT.functional_wildcard = {'con_0001.nii' 'con_0002.nii' 'con_0003.nii' 'con_0004.nii' 'con_0005.nii' 'con_0006.nii' 'con_0007.nii' 'con_0008.nii' 'con_0009.nii' 'con_0010.nii' 'con_0011.nii' 'con_0012.nii'}; %lukavo76: default option for Linux OS
 % DAT.functional_wildcard = {'^con_0001.*\nii$' '^con_0002.*\nii$' '^con_0003.*\nii$' '^con_0004.*\nii$'}; %lukavo76: fallback option for Windows OS, spm_select uses regular expression to filter (like in the GUI)
 
 
@@ -170,12 +173,12 @@ DAT.functional_wildcard = {'con_0001.nii' 'con_0002.nii' 'con_0003.nii' 'con_000
 % sets of images, where the ith image is from the ith subject for all
 % conditions).
 
-DAT.contrasts = [1 0 -1 0 0 0; 0 1 -1 0 0 0; 1 -1 0 0 0 0; 0 0 0 1 0 -1; 0 0 0 0 1 -1; 0 0 0 1 -1 0; 1 0 -1 -1 0 1; 0 1 -1 0 -1 1; 1 -1 0 -1 1 0];
+DAT.contrasts = [1 0 0 -1 0 0 0 0 0 0 0 0; 0 1 0 0 -1 0 0 0 0 0 0 0; 0 0 1 0 0 -1 0 0 0 0 0 0; 0 0 0 0 0 0 1 0 0 -1 0 0; 0 0 0 0 0 0 0 1 0 0 -1 0; 0 0 0 0 0 0 0 0 1 0 0 -1];
     
 % Descriptive names for contrasts to be used in plots and tables. Avoid
 % special characters.
 % DAT.contrastnames = {'sucrose vs sucralose' 'sucrose vs erythritol' 'erythritol vs sucralose'};
-DAT.contrastnames = DSGN.contrastnames(7:end);
+DAT.contrastnames = ['bitter vs placebo high calorie', 'bitter vs placebo low calorie', 'bitter vs placebo neutral', DSGN.contrastnames(13:end)];
 
 DAT.contrastnames = format_strings_for_legend(DAT.contrastnames);
 
