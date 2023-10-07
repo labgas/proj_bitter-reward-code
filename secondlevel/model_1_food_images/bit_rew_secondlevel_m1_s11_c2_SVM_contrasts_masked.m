@@ -1,4 +1,4 @@
-%% c2_SVM_contrasts_masked.m
+%% bit_rew_secondlevel_m1_s11_c2_SVM_contrasts_masked.m
 %
 %
 % *USAGE*
@@ -77,7 +77,7 @@
 
 % GET MODEL-SPECIFIC PATHS AND OPTIONS
 
-a_set_up_paths_always_run_first;
+bit_rew_secondlevel_m1_s0_a_set_up_paths_always_run_first;
 
 % NOTES 
 %   1. CHANGE THIS TO THE MODEL-SPECIFIC VERSION OF THIS SCRIPT
