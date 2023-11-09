@@ -54,12 +54,9 @@
 % - This script is highly study-specific, but since we use a fixed
 %       BIDS-compatible directory structure and format for the phenotype
 %       files, there should be common elements across studies
-% - This is an example from a design with four conditions and 
-%       three contrasts of (particular) interest, 
-%       see preregistration https://osf.io/z6gy2 for design info etc
-%       see datalad dataset as GIN repo https://gin.g-node.org/labgas/proj_erythritol_4a
-% - For an example of a design including group comparisons, see https://github.com/labgas/proj-emosymp/blob/main/secondlevel/model_1_CANlab_classic_GLM/prep_1b_emosymp_m1_s4_prep_behavioral_data.m
-%    
+% - This is an example from a design with different sessions, see LaBGAS
+%       Github and GIN for more (and simpler) examples which may suit your
+%       purpose better
 %
 %__________________________________________________________________________
 %
@@ -67,8 +64,8 @@
 % date:   Dartmouth, May, 2022
 %
 %__________________________________________________________________________
-% @(#)% prep_1b_prep_behavioral_data.m         v1.2
-% last modified: 2023/09/22
+% @(#)% prep_1b_prep_behavioral_data.m         v1.4
+% last modified: 2023/11/09
 %
 %
 %% RUN SCRIPT A_SET_UP_PATHS_ALWAYS_RUN_FIRST AND LOAD DAT IF NEEDED
@@ -78,7 +75,15 @@ bit_rew_secondlevel_m1_s0_a_set_up_paths_always_run_first;
 
 if ~exist('DAT','var')
     
-    load(fullfile(resultsdir,'image_names_and_setup.mat'));
+    try
+    
+        load(fullfile(resultsdir,'image_names_and_setup.mat'));
+    
+    catch
+        
+        prep_1_set_conditions_contrasts_colors;
+        
+    end
     
 end
 
@@ -99,6 +104,7 @@ if ~exist(behavioral_fname_path, 'file')
 end
 
 behavioral_data_table = readtable(behavioral_fname_path,'TreatAsEmpty','n/a','FileType','text','Delimiter','tab'); % read .tsv file into Matlab table variable
+
 
 % CONDITIONS
 
@@ -402,6 +408,10 @@ else
 end
 
 printhdr('Save DSGN & DAT structures and directory names in image_names_and_setup.mat');
+
+cd(resultsdir); % unannex image_names_and_setup.mat file if already datalad saved to prevent write permission problems
+! git annex unannex image_names_and_setup.mat
+cd(rootdir);
 
 savefilename = fullfile(resultsdir, 'image_names_and_setup.mat');
 save(savefilename, 'dashes','printstr','printhdr','DSGN', 'DAT', 'basedir', 'datadir', 'maskdir', 'resultsdir', 'scriptsdir', 'figsavedir', 'htmlsavedir', '-append');
