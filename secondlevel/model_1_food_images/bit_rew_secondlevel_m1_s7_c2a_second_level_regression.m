@@ -81,9 +81,9 @@
 %
 % -------------------------------------------------------------------------
 %
-% c2a_second_level_regression.m         v5.1
+% c2a_second_level_regression.m         v6.1
 %
-% last modified: 2023/02/17
+% last modified: 2023/11/21
 %
 %
 %% GET AND SET OPTIONS
@@ -113,7 +113,7 @@ results_suffix = 'no_cov'; % suffix of your choice added to .mat file with saved
 % Custom options from prep_3a script
 
 % dorobust = true/false;
-% dorobfit_parcelwise = true/false;
+% dorobfit_parcelwise = true;
 %   csf_wm_covs = true/false;
 %   remove_outliers = true/false;
 % atlasname_glm = 'atlas_name';
@@ -183,22 +183,30 @@ end
 if ~dorobfit_parcelwise
 
     if exist('maskname_glm', 'var') && ~isempty(maskname_glm) && exist(maskname_glm, 'file')
-
+        
         apply_mask_before_fdr = true;
         [~,maskname_short] = fileparts(maskname_glm);
+            if contains(maskname_short,'nii')
+                [~,maskname_short] = fileparts(maskname_short);
+            end
         mask_string = sprintf('masked with %s', maskname_short);
         glmmask = fmri_mask_image(maskname_glm, 'noverbose'); 
-
+            if any(unique(glmmask.dat) ~= 1)
+                glmmask.dat(glmmask.dat > 0) = 1; % binarize mask if needed
+            end
+        fprintf('\nMasking voxelwise results visualization with %s\n\n', maskname_short);
+        
     else
-
+        
         apply_mask_before_fdr = false;
         mask_string = sprintf('without masking');
+        fprintf('\nShowing voxelwise results without masking\n\n');
+        
+    end 
 
-    end  
-    
 end
 
-if exist('atlasname_glm','var') && ~isempty(atlasname_glm) && exist(atlasname_glm, 'file')
+if exist('atlasname_glm','var') && ~isempty(atlasname_glm)
 
     if contains(atlasname_glm,'.mat')
         
@@ -222,7 +230,7 @@ if exist('atlasname_glm','var') && ~isempty(atlasname_glm) && exist(atlasname_gl
             
         end
         
-        fprintf('\nLabeling regions using custom-made atlas %s\n\n', maskname_short);
+        fprintf('\nLabeling regions using custom atlas %s\n\n', atlasname_glm);
 
     else
 
@@ -239,7 +247,10 @@ else
         
     end
 
-end 
+end
+
+
+brainmask = fmri_mask_image(maskname_brain,'noverbose');
 
 
 %% LOAD RESULTS IF NEEDED
@@ -359,16 +370,29 @@ for c = 1:size(results, 2) % number of contrasts or conditions
     
         if ~dorobfit_parcelwise
 
-            t = results{c}.t; % NOTE: this statistic_object is unthresholded AND unmasked
-            glmmask = resample_space(glmmask,t);
-
-                if apply_mask_before_fdr
-                    t = apply_mask(t, glmmask);
+            t = results{c}.t; % NOTE: this statistic_object is unthresholded AND unmasked (except for a brainmask)
+            
+            t = apply_mask(t,brainmask); % re-apply brainmask just to be sure
+%             t = trim_mask(t);
+            
+            if exist('maskname_short','var')
+                voxelsize_glmmask = diag(glmmask.volInfo.mat(1:3, 1:3))';
+                if ~isequal(voxelsize_glmmask,t)
+                    glmmask = resample_space(glmmask,t);
                 end
+            end
+        
+            glmmask.dat(glmmask.dat < 1) = 0; % re-binarize mask, resample_space causes non-zero non-one values at inner cortical boundaries
+
+            if apply_mask_before_fdr
+                t = apply_mask(t, glmmask);
+%                 t = trim_mask(t);
+            end
 
         else
 
-            t = results{c}.t_obj; % NOTE: this statistic_object is thresholded at FDR q < 0.05, resampled to the space of the fmri_data_object and masked in the previous script!
+            t = results{c}.t_obj; % NOTE: this statistic_object is thresholded at FDR q < 0.05, resampled to the space of the fmri_data_object and masked by the atlas in the previous script!
+            k_threshold_glm = 0; % we don't want an extent threshold for parcelwise as it could eliminate small parcels
 
         end
 
@@ -382,6 +406,7 @@ for c = 1:size(results, 2) % number of contrasts or conditions
 
                     for j = 1:size(BF,2)
                         BF(j) = apply_mask(BF(j), glmmask);
+%                         BF(j) = trim_mask(BF(j));
 
                     end
                 end
@@ -412,45 +437,36 @@ for c = 1:size(results, 2) % number of contrasts or conditions
     
     fprintf ('\nMONTAGE GLM RESULTS AT FDR q < %1.4f, k = %d, CONTRAST: %s, REGRESSORS: %s, MASK: %s, SCALING: %s\n\n', q_threshold_glm, k_threshold_glm, analysisname, names_string, mask_string, scaling_string);
     
-    o2 = canlab_results_fmridisplay([], 'multirow', num_effects, 'overlay', 'mni_icbm152_t1_tal_nlin_sym_09a_brainonly.img');
+    o2 = canlab_results_fmridisplay([], 'multirow', num_effects);%, 'overlay', 'mni_icbm152_t1_tal_nlin_sym_09a_brainonly.img');
     
         for j = 1:num_effects
 
             tj = get_wh_image(t, j);
-            
-                if ~dorobfit_parcelwise
                     
-                    tj = threshold(tj, q_threshold_glm, 'fdr', 'k', k_threshold_glm); 
-                    
-                else
-                    
-                    if q_threshold_glm ~= .05 % already thresholded at q < 0.05
-                        
-                        tj = threshold(tj, q_threshold_glm, 'fdr', 'k', k_threshold_glm); 
-                        
-                    end
-                        
-                end
-                
-                datsig = tj.dat(logical(tj.sig));
-                datsigneg = datsig(datsig<0);
-                datsigpos = datsig(datsig>0);
+            tj = threshold(tj, q_threshold_glm, 'fdr', 'k', k_threshold_glm); 
+
+            datsig = tj.dat(logical(tj.sig));
+            datsigneg = datsig(datsig<0);
+            datsigpos = datsig(datsig>0);
 
                 if isempty(datsigneg) && ~isempty(datsigpos)
                     
-                    o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.9 .4 0], 'maxcolor', [1 1 0], 'cmaprange', [min(datsigpos) max(datsigpos)]);
+                    o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.9 .4 0], 'maxcolor', [1 1 0]);%, 'cmaprange', [min(datsigpos) max(datsigpos)]);
                     
                 elseif isempty(datsigpos) && ~isempty(datsigneg)
                     
-                    o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.1 .8 .8], 'maxcolor', [.1 .1 .8], 'cmaprange', [min(datsigneg) max(datsigneg)]);
+                    o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.1 .8 .8], 'maxcolor', [.1 .1 .8]);%, 'cmaprange', [min(datsigneg) max(datsigneg)]);
                     
                 else
                 
-                    o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'splitcolor',{[.1 .8 .8] [.1 .1 .8] [.9 .4 0] [1 1 0]}, 'cmaprange', [min(datsigneg) max(datsigneg) min(datsigpos) max(datsigpos)]);
+                    o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'splitcolor',{[.1 .8 .8] [.1 .1 .8] [.9 .4 0] [1 1 0]});%, 'cmaprange', [min(datsigneg) max(datsigneg) min(datsigpos) max(datsigpos)]);
                     
                 end
                 
-            o2 = legend(o2);
+                if num_effects < 4
+                    o2 = legend(o2);
+                end
+                
             o2 = title_montage(o2, 2*j, [analysisname ' FDR ' num2str(q_threshold_glm) ' ' names{j} ' ' mask_string ' ' scaling_string]);
 
         end % for loop over regressors in model
@@ -475,20 +491,8 @@ for c = 1:size(results, 2) % number of contrasts or conditions
             fprintf ('\nTABLE GLM RESULTS AT FDR q < %1.4f, k = %d, CONTRAST: %s, REGRESSOR: %s, MASK: %s, SCALING: %s\n\n', q_threshold_glm, k_threshold_glm, analysisname, names{j}, mask_string, scaling_string);
 
             tj = get_wh_image(t, j);
-            
-                if ~dorobfit_parcelwise
                     
-                    tj = threshold(tj, q_threshold_glm, 'fdr', 'k', k_threshold_glm); 
-                    
-                else
-                    
-                    if q_threshold_glm ~= .05
-                        
-                        tj = threshold(tj, q_threshold_glm, 'fdr', 'k', k_threshold_glm); 
-                        
-                    end
-                        
-                end
+            tj = threshold(tj, q_threshold_glm, 'fdr', 'k', k_threshold_glm); 
 
             r = region(tj, 'noverbose');
             r(cat(1, r.numVox) < k_threshold_glm) = [];
@@ -511,7 +515,6 @@ for c = 1:size(results, 2) % number of contrasts or conditions
                 fprintf ('\nMONTAGE REGIONCENTERS GLM RESULTS AT FDR q < %1.4f, k = %d, CONTRAST: %s, REGRESSOR: %s, MASK: %s, SCALING: %s\n\n', q_threshold_glm, k_threshold_glm, analysisname, names{j}, mask_string, scaling_string);
                 
                 o3 = montage(r, 'colormap', 'regioncenters', 'splitcolor',{[.1 .8 .8] [.1 .1 .8] [.9 .4 0] [1 1 0]});
-                o3 = legend(o3);
 
                 % Activate, name, and save figure
                 figtitle = sprintf('%s_%s_%1.4f_FDR_regions_%s_%s_%s', analysisname, results_suffix, q_threshold_glm, names{j}, mask_string, scaling_string);
@@ -539,7 +542,7 @@ for c = 1:size(results, 2) % number of contrasts or conditions
     
     fprintf ('\nMONTAGE GLM RESULTS AT UNCORRECTED p < %1.4f, k = %d, CONTRAST: %s, REGRESSORS: %s, MASK: %s, SCALING: %s\n\n', p_threshold_glm, k_threshold_glm, analysisname, names_string, mask_string, scaling_string);
     
-    o2 = canlab_results_fmridisplay([], 'multirow', num_effects, 'overlay', 'mni_icbm152_t1_tal_nlin_sym_09a_brainonly.img');
+    o2 = canlab_results_fmridisplay([], 'multirow', num_effects);%, 'overlay', 'mni_icbm152_t1_tal_nlin_sym_09a_brainonly.img');
     
         for j = 1:num_effects
 
@@ -551,21 +554,24 @@ for c = 1:size(results, 2) % number of contrasts or conditions
             datsigneg = datsig(datsig<0);
             datsigpos = datsig(datsig>0);
 
-            if isempty(datsigneg) && ~isempty(datsigpos)
-                    
-                o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.9 .4 0], 'maxcolor', [1 1 0], 'cmaprange', [min(datsigpos) max(datsigpos)]);
-                    
-            elseif isempty(datsigpos) && ~isempty(datsigneg)
-                    
-                o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.1 .8 .8], 'maxcolor', [.1 .1 .8], 'cmaprange', [min(datsigneg) max(datsigneg)]);
-                    
-            else
+                if isempty(datsigneg) && ~isempty(datsigpos)
+
+                    o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.9 .4 0], 'maxcolor', [1 1 0]);%, 'cmaprange', [min(datsigpos) max(datsigpos)]);
+
+                elseif isempty(datsigpos) && ~isempty(datsigneg)
+
+                    o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.1 .8 .8], 'maxcolor', [.1 .1 .8]);%, 'cmaprange', [min(datsigneg) max(datsigneg)]);
+
+                else
+
+                    o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'splitcolor',{[.1 .8 .8] [.1 .1 .8] [.9 .4 0] [1 1 0]});%, 'cmaprange', [min(datsigneg) max(datsigneg) min(datsigpos) max(datsigpos)]);
+
+                end
                 
-                o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'splitcolor',{[.1 .8 .8] [.1 .1 .8] [.9 .4 0] [1 1 0]}, 'cmaprange', [min(datsigneg) max(datsigneg) min(datsigpos) max(datsigpos)]);
-                    
-            end
+                if num_effects < 4
+                    o2 = legend(o2);
+                end
                 
-            o2 = legend(o2);
             o2 = title_montage(o2, 2*j, [analysisname ' unc ' num2str(p_threshold_glm) ' ' names{j} ' ' mask_string ' ' scaling_string]);
         
         end % for loop over regressors in model
@@ -614,7 +620,6 @@ for c = 1:size(results, 2) % number of contrasts or conditions
                 fprintf ('\nMONTAGE REGIONCENTERS GLM RESULTS AT UNCORRECTED p < %1.4f, k = %d, CONTRAST: %s, REGRESSOR: %s, MASK: %s, SCALING: %s\n\n', p_threshold_glm, k_threshold_glm, analysisname, names{j}, mask_string, scaling_string);
                 
                 o3 = montage(r, 'colormap', 'regioncenters', 'splitcolor',{[.1 .8 .8] [.1 .1 .8] [.9 .4 0] [1 1 0]});
-                o3 = legend(o3);
 
                 % Activate, name, and save figure
                 figtitle = sprintf('%s_%s_%1.4f_unc_regions_%s_%s_%s', analysisname, results_suffix, p_threshold_glm, names{j}, mask_string, scaling_string);
@@ -644,33 +649,36 @@ for c = 1:size(results, 2) % number of contrasts or conditions
 
         fprintf ('\nMONTAGE BAYESIAN GLM RESULTS AT |BF| > %1.2f, CONTRAST: %s, REGRESSORS: %s, MASK: %s, SCALING: %s\n\n', BF_threshold_glm, analysisname, names_string, mask_string, scaling_string);
 
-        o2 = canlab_results_fmridisplay([], 'multirow', num_effects, 'overlay', 'mni_icbm152_t1_tal_nlin_sym_09a_brainonly.img'); 
+        o2 = canlab_results_fmridisplay([], 'multirow', num_effects);%, 'overlay', 'mni_icbm152_t1_tal_nlin_sym_09a_brainonly.img'); 
 
             for j = 1:num_effects
 
                 BFj = BF(1,j);
                 
                 BFj = threshold(BFj, [-2*(log(BF_threshold_glm)) 2*(log(BF_threshold_glm))], 'raw-outside'); 
-                
+
                 datsig = BFj.dat(logical(BFj.sig));
                 datsigneg = datsig(datsig<0);
                 datsigpos = datsig(datsig>0);
                 
-                if isempty(datsigneg) && ~isempty(datsigpos)
-                    
-                    o2 = addblobs(o2, region(BFj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[0 0.25 0], 'maxcolor', [0 1 0], 'cmaprange', [min(datsigpos) max(datsigpos)]);
-                    
-                elseif isempty(datsigpos) && ~isempty(datsigneg)
-                    
-                    o2 = addblobs(o2, region(BFj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.25 0 0], 'maxcolor', [1 0 0], 'cmaprange', [min(datsigneg) max(datsigneg)]);
-                    
-                else
-                
-                    o2 = addblobs(o2, region(BFj), 'wh_montages', (2*j)-1:2*j, 'splitcolor',{[.25 0 0] [1 0 0] [0 0.25 0] [0 1 0]}, 'cmaprange', [min(datsigneg) max(datsigneg) min(datsigpos) max(datsigpos)]); % red in favor of H0, green in favor of H1 for BF maps
-                    
-                end
+                    if isempty(datsigneg) && ~isempty(datsigpos)
 
-                o2 = legend(o2);
+                        o2 = addblobs(o2, region(BFj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[0 0.25 0], 'maxcolor', [0 1 0]);%, 'cmaprange', [min(datsigpos) max(datsigpos)]);
+
+                    elseif isempty(datsigpos) && ~isempty(datsigneg)
+
+                        o2 = addblobs(o2, region(BFj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.25 0 0], 'maxcolor', [1 0 0]);%, 'cmaprange', [min(datsigneg) max(datsigneg)]);
+
+                    else
+
+                        o2 = addblobs(o2, region(BFj), 'wh_montages', (2*j)-1:2*j, 'splitcolor',{[.25 0 0] [1 0 0] [0 0.25 0] [0 1 0]});%, 'cmaprange', [min(datsigneg) max(datsigneg) min(datsigpos) max(datsigpos)]); % red in favor of H0, green in favor of H1 for BF maps
+
+                    end
+
+                    if num_effects < 4
+                        o2 = legend(o2);
+                    end
+                
                 o2 = title_montage(o2, 2*j, [analysisname ' |BF| > ' num2str(BF_threshold_glm) ' ' names{j} ' ' mask_string ' ' scaling_string]);
 
             end % for loop over regressors in model
@@ -719,7 +727,6 @@ for c = 1:size(results, 2) % number of contrasts or conditions
                     fprintf ('\nMONTAGE REGIONCENTERS BAYESIAN GLM RESULTS AT |BF| > %1.2f, k = %d, CONTRAST: %s, REGRESSOR: %s, MASK: %s, SCALING: %s\n\n', BF_threshold_glm, k_threshold_glm, analysisname, names{j}, mask_string, scaling_string);
 
                     o3 = montage(r, 'colormap', 'regioncenters', 'splitcolor',{[.25 0 0] [1 0 0] [0 0.25 0] [0 1 0]});
-                    o3 = legend(o3);
 
                     % Activate, name, and save figure
                     figtitle = sprintf('%s_%s_%1.4f_unc_regions_%s_%s_%s', analysisname, results_suffix, p_threshold_glm, names{j}, mask_string, scaling_string);
@@ -797,36 +804,38 @@ for c = 1:size(results, 2) % number of contrasts or conditions
 
             fprintf ('\nMONTAGE BOOTSTRAPPED %s RESULTS AT FDR q < %1.4f, k = %d, CONTRAST: %s, REGRESSORS: %s, MASK: %s, SCALING: %s\n\n', upper(algorithm_mvpa_reg_cov), q_threshold_mvpa_reg_cov, k_threshold_mvpa_reg_cov, analysisname, names_string, mask_string, scaling_string);
 
-            o2 = canlab_results_fmridisplay([], 'multirow', mvpa_num_effects, 'overlay', 'mni_icbm152_t1_tal_nlin_sym_09a_brainonly.img');
+            o2 = canlab_results_fmridisplay([], 'multirow', mvpa_num_effects);%, 'overlay', 'mni_icbm152_t1_tal_nlin_sym_09a_brainonly.img');
 
                 for j = 1:mvpa_num_effects
 
                     tj = mvpa_bs_stats{j}.weight_obj;
                         if apply_mask_before_fdr
                             tj = apply_mask(tj, glmmask);
+%                             tj = trim_mask(tj);
                         end
-                    tj = threshold(tj, q_threshold_glm, 'fdr', 'k', k_threshold_glm); 
+                    tj = threshold(tj, q_threshold_mvpa_reg_cov, 'fdr', 'k', k_threshold_mvpa_reg_cov); 
                     
                     datsig = tj.dat(logical(tj.sig));
                     datsigneg = datsig(datsig<0);
                     datsigpos = datsig(datsig>0);
 
-                    if isempty(datsigneg) && ~isempty(datsigpos)
+                        if isempty(datsigneg) && ~isempty(datsigpos)
+
+                            o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.9 .4 0], 'maxcolor', [1 1 0]);%, 'cmaprange', [min(datsigpos) max(datsigpos)]);
+
+                        elseif isempty(datsigpos) && ~isempty(datsigneg)
+
+                            o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.1 .8 .8], 'maxcolor', [.1 .1 .8]);%, 'cmaprange', [min(datsigneg) max(datsigneg)]);
+
+                        else
+
+                            o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'splitcolor',{[.1 .8 .8] [.1 .1 .8] [.9 .4 0] [1 1 0]});%, 'cmaprange', [min(datsigneg) max(datsigneg) min(datsigpos) max(datsigpos)]);
+
+                        end
                     
-                        o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.9 .4 0], 'maxcolor', [1 1 0], 'cmaprange', [min(datsigpos) max(datsigpos)]);
-                    
-                    elseif isempty(datsigpos) && ~isempty(datsigneg)
-                    
-                        o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'mincolor',[.1 .8 .8], 'maxcolor', [.1 .1 .8], 'cmaprange', [min(datsigneg) max(datsigneg)]);
-                    
-                    else
-                
-                        o2 = addblobs(o2, region(tj), 'wh_montages', (2*j)-1:2*j, 'splitcolor',{[.1 .8 .8] [.1 .1 .8] [.9 .4 0] [1 1 0]}, 'cmaprange', [min(datsigneg) max(datsigneg) min(datsigpos) max(datsigpos)]);
-                    
-                    end
-                    
-                    o2 = title_montage(o2, 2*j, [analysisname ' FDR ' num2str(q_threshold_glm) ' ' names{j} ' ' mask_string ' ' scaling_string]);
                     o2 = legend(o2);
+
+                    o2 = title_montage(o2, 2*j, [analysisname ' FDR ' num2str(q_threshold_glm) ' ' names{j} ' ' mask_string ' ' scaling_string]);
 
                 end % for loop over regressors
 
@@ -855,6 +864,10 @@ printhdr('APPENDING REGION OBJECTS TO SAVED RESULTS');
 fprintf('\n\n');
     
     if ~dorobfit_parcelwise
+        
+        cd(resultsdir); % unannex image_names_and_setup.mat file if already datalad saved to prevent write permission problems
+        ! git annex unannex regression_stats_and_maps*.mat
+        cd(rootdir);
     
         savefilenamedata_region = fullfile(resultsdir, ['regression_stats_and_maps_', mygroupnamefield, '_', scaling_string, '_', results_suffix, '.mat']);
         
@@ -867,6 +880,10 @@ fprintf('\n\n');
         end
         
     else
+        
+        cd(resultsdir); % unannex image_names_and_setup.mat file if already datalad saved to prevent write permission problems
+        ! git annex unannex parcelwise_stats_and_maps*.mat
+        cd(rootdir);
         
         savefilenamedata_region = fullfile(resultsdir, ['parcelwise_stats_and_maps_', mygroupnamefield, '_', scaling_string, '_', results_suffix, '.mat']);
         

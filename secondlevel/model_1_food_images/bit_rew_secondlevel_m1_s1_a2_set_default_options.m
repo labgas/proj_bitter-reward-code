@@ -44,7 +44,7 @@ maskname_glm = which('gm_mask_canlab2023_coarse_fmriprep20_0_25.nii');  % defaul
                                                                         % if you do not want to mask, change to []
                                                                         % if you want to use a custom mask, put it in maskdir and change name here
                                                                         % used in this script only for visualization of unthresholded results
-atlasname_glm = 'canlab2023';                           % default use of new canlab2023 atlas - leaving blank will use legacy canlab2018 atlas, which is not recommended
+atlasname_glm = 'canlab2023_coarse_2mm';                % default use of new canlab2023 atlas (coarse 2mm version for now, current CANlab default is fine 1mm and in fsl space)
                                                             % if specified, atlas object used for 
                                                             % 1. defining parcels in parcelwise analysis
                                                             % 2. labeling regions in both voxelwise and parcelwise analyses
