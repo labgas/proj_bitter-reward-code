@@ -81,9 +81,9 @@
 %
 % -------------------------------------------------------------------------
 %
-% c2a_second_level_regression.m         v6.0
+% c2a_second_level_regression.m         v6.1
 %
-% last modified: 2023/11/15
+% last modified: 2023/11/21
 %
 %
 %% GET AND SET OPTIONS
@@ -180,21 +180,37 @@ end
 
 % NOTE: In case of parcelwise regression, masking is already done in prep_3a script as part of robfit_parcelwise, but we need the atlas object and define mask_string var
 
+cmap = colormap('lines');
+
 if ~dorobfit_parcelwise
 
     if exist('maskname_glm', 'var') && ~isempty(maskname_glm) && exist(maskname_glm, 'file')
         
         apply_mask_before_fdr = true;
+        
         [~,maskname_short] = fileparts(maskname_glm);
             if contains(maskname_short,'nii')
                 [~,maskname_short] = fileparts(maskname_short);
             end
+            
         mask_string = sprintf('masked with %s', maskname_short);
+        
         glmmask = fmri_mask_image(maskname_glm, 'noverbose'); 
             if any(unique(glmmask.dat) ~= 1)
                 glmmask.dat(glmmask.dat > 0) = 1; % binarize mask if needed
             end
+            
         fprintf('\nMasking voxelwise results visualization with %s\n\n', maskname_short);
+        
+        % MONTAGE OF MASK
+        
+        o2 = canlab_results_fmridisplay([], 'compact');
+        o2 = addblobs(o2, glmmask,'onecolor','color',[0.4 0.2 0.6],'trans','transvalue',0.50);
+        o2 = title_montage(o2, 5, ['voxel-wise analysis masked with: ' maskname_short]);
+        set(gcf,'WindowState','maximized');
+        drawnow,snapnow;
+        
+        clear o2
         
     else
         
@@ -211,26 +227,65 @@ if exist('atlasname_glm','var') && ~isempty(atlasname_glm)
     if contains(atlasname_glm,'.mat')
         
         load(atlasname_glm);
+        [~,atlasname_short] = fileparts(atlasname_glm);
         clear mask
         
         if dorobfit_parcelwise
-            [~,maskname_short] = fileparts(atlasname_glm);
+            
+            maskname_short = atlasname_short;
             mask_string = sprintf('masked with %s', maskname_short);
+            fprintf('\nRunning parcelwise analysis in custom-made atlas %s\n\n', atlasname_short);
             
         end
         
-        fprintf('\nLabeling regions using custom-made atlas %s\n\n', maskname_short);
+        fprintf('\nLabeling regions using custom-made atlas %s\n\n', atlasname_short);
+        
+        % MONTAGE OF ATLAS
+        
+        figure;
+        o2 = canlab_results_fmridisplay([], 'compact');
+        o2 = addblobs(o2, atlas2region(combined_atlas),'indexmap',cmap,'interp','nearest');
+        if dorobfit_parcelwise
+            o2 = title_montage(o2, 5, ['parcel-wise analysis in atlas: ' atlasname_short]);
+        else
+            o2 = title_montage(o2, 5, ['voxel-wise analysis labeled with atlas: ' atlasname_short]);
+        end
+        set(gcf,'WindowState','maximized');
+        drawnow,snapnow;
+        
+        clear o2
 
     elseif ischar(atlasname_glm)
 
         combined_atlas = load_atlas(atlasname_glm);
         
+        if contains(atlasname_glm,'canlab2023')
+            combined_atlas = combined_atlas.threshold(0.20); % only keep probability values > 0.20 in probabistic canlab2023 atlas
+        end
+        
         if dorobfit_parcelwise
             mask_string = sprintf('in atlas %s',atlasname_glm);
+            
+            fprintf('\nRunning parcelwise analysis in custom atlas %s\n\n', atlasname_glm);
             
         end
         
         fprintf('\nLabeling regions using custom atlas %s\n\n', atlasname_glm);
+        
+        % MONTAGE OF ATLAS
+        
+        figure;
+        o2 = canlab_results_fmridisplay([], 'compact');
+        o2 = addblobs(o2, atlas2region(combined_atlas),'indexmap',cmap,'interp','nearest');
+        if dorobfit_parcelwise
+            o2 = title_montage(o2, 5, ['parcel-wise analysis in atlas: ' atlasname_glm]);
+        else
+            o2 = title_montage(o2, 5, ['voxel-wise analysis labeled with atlas: ' atlasname_glm]);
+        end
+        set(gcf,'WindowState','maximized');
+        drawnow,snapnow;
+        
+        clear o2
 
     else
 
@@ -373,7 +428,7 @@ for c = 1:size(results, 2) % number of contrasts or conditions
             t = results{c}.t; % NOTE: this statistic_object is unthresholded AND unmasked (except for a brainmask)
             
             t = apply_mask(t,brainmask); % re-apply brainmask just to be sure
-            t = trim_mask(t);
+%             t = trim_mask(t);
             
             if exist('maskname_short','var')
                 voxelsize_glmmask = diag(glmmask.volInfo.mat(1:3, 1:3))';
@@ -386,7 +441,7 @@ for c = 1:size(results, 2) % number of contrasts or conditions
 
             if apply_mask_before_fdr
                 t = apply_mask(t, glmmask);
-                t = trim_mask(t);
+%                 t = trim_mask(t);
             end
 
         else
@@ -406,7 +461,7 @@ for c = 1:size(results, 2) % number of contrasts or conditions
 
                     for j = 1:size(BF,2)
                         BF(j) = apply_mask(BF(j), glmmask);
-                        BF(j) = trim_mask(BF(j));
+%                         BF(j) = trim_mask(BF(j));
 
                     end
                 end
@@ -656,7 +711,7 @@ for c = 1:size(results, 2) % number of contrasts or conditions
                 BFj = BF(1,j);
                 
                 BFj = threshold(BFj, [-2*(log(BF_threshold_glm)) 2*(log(BF_threshold_glm))], 'raw-outside'); 
-                
+
                 datsig = BFj.dat(logical(BFj.sig));
                 datsigneg = datsig(datsig<0);
                 datsigpos = datsig(datsig>0);
@@ -811,7 +866,7 @@ for c = 1:size(results, 2) % number of contrasts or conditions
                     tj = mvpa_bs_stats{j}.weight_obj;
                         if apply_mask_before_fdr
                             tj = apply_mask(tj, glmmask);
-                            tj = trim_mask(tj);
+%                             tj = trim_mask(tj);
                         end
                     tj = threshold(tj, q_threshold_mvpa_reg_cov, 'fdr', 'k', k_threshold_mvpa_reg_cov); 
                     

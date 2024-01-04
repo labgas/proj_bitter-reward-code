@@ -143,9 +143,9 @@
 %
 % -------------------------------------------------------------------------
 %
-% prep_3a_run_second_level_regression_and_save.m         v6.2
+% prep_3a_run_second_level_regression_and_save.m         v6.3
 %
-% last modified: 2023/11/19
+% last modified: 2023/11/23
 %
 %
 %% GET AND SET OPTIONS
@@ -293,7 +293,18 @@ if ~dorobfit_parcelwise
             if any(unique(glmmask.dat) ~= 1)
                 glmmask.dat(glmmask.dat > 0) = 1; % binarize mask if needed
             end
+            
         fprintf('\nMasking voxelwise results visualization with %s\n\n', maskname_short);
+        
+        % MONTAGE OF MASK
+        
+        o2 = canlab_results_fmridisplay([], 'compact');
+        o2 = addblobs(o2, glmmask);
+        o2 = title_montage(o2, 5, maskname_short);
+        set(gcf,'WindowState','maximized');
+        drawnow,snapnow;
+        
+        clear o2
         
     else
         
@@ -309,21 +320,37 @@ if exist('atlasname_glm','var') && ~isempty(atlasname_glm)
     if contains(atlasname_glm,'.mat')
         
         load(atlasname_glm);
+        [~,atlasname_short] = fileparts(atlasname_glm);
         clear mask
         
         if dorobfit_parcelwise
-            [~,maskname_short] = fileparts(atlasname_glm);
+            
+            maskname_short = atlasname_short;
             mask_string = sprintf('masked with %s', maskname_short);
-
-            fprintf('\nRunning parcelwise analysis in custom-made atlas %s\n\n', atlasname_glm);
+            fprintf('\nRunning parcelwise analysis in custom-made atlas %s\n\n', atlasname_short);
             
         end
         
-        fprintf('\nLabeling regions using custom-made atlas %s\n\n', maskname_short);
+        fprintf('\nLabeling regions using custom-made atlas %s\n\n', atlasname_short);
+        
+        % MONTAGE OF ATLAS
+        
+        cmap = colormap('lines');
+        o2 = canlab_results_fmridisplay([], 'compact');
+        o2 = addblobs(o2, atlas2region(combined_atlas),'indexmap',cmap);
+        o2 = title_montage(o2, 5, atlasname_short);
+        set(gcf,'WindowState','maximized');
+        drawnow,snapnow;
+        
+        clear o2
 
     elseif ischar(atlasname_glm)
 
         combined_atlas = load_atlas(atlasname_glm);
+        
+        if contains(atlasname_glm,'canlab2023')
+            combined_atlas = combined_atlas.threshold(0.20); % only keep probability values > 0.25 in probabistic canlab2023 atlas
+        end
         
         if dorobfit_parcelwise
             mask_string = sprintf('in atlas %s',atlasname_glm);
@@ -333,6 +360,17 @@ if exist('atlasname_glm','var') && ~isempty(atlasname_glm)
         end
         
         fprintf('\nLabeling regions using custom atlas %s\n\n', atlasname_glm);
+        
+        % MONTAGE OF ATLAS
+        
+        cmap = colormap('lines');
+        o2 = canlab_results_fmridisplay([], 'compact');
+        o2 = addblobs(o2, atlas2region(combined_atlas),'indexmap',cmap);
+        o2 = title_montage(o2, 5, atlasname_glm);
+        set(gcf,'WindowState','maximized');
+        drawnow,snapnow;
+        
+        clear o2
 
     else
 
@@ -570,6 +608,21 @@ for c = 1:kc
             if ~isequal(voxelsize_glmmask,voxelsize_cat_obj)
                 glmmask = resample_space(glmmask,cat_obj);
                 glmmask.dat(glmmask.dat < 1) = 0; % re-binarize mask, resample_space causes non-zero non-one values at inner cortical boundaries
+                
+                if c == 1
+                
+                    % MONTAGE OF RESAMPLED MASK
+
+                    o2 = canlab_results_fmridisplay([], 'compact');
+                    o2 = addblobs(o2, glmmask);
+                    o2 = title_montage(o2, 5, ['resampled ' maskname_short]);
+                    set(gcf,'WindowState','maximized');
+                    drawnow,snapnow;
+
+                    clear o2
+                    
+                end
+                
             end
         end
         
@@ -579,9 +632,26 @@ for c = 1:kc
             voxelsize_atlas = abs(diag(combined_atlas.volInfo.mat(1:3, 1:3)))';
             if ~isequal(voxelsize_atlas,voxelsize_cat_obj)
                 combined_atlas = resample_space(combined_atlas,cat_obj);
-            end
-            if contains(atlasname_glm,'canlab2023')
-                combined_atlas = combined_atlas.threshold(0.25); % only keep probability values > 0.25
+                
+                if c == 1
+                
+                    % MONTAGE OF RESAMPLED ATLAS
+
+                    cmap = colormap('lines');
+                    o2 = canlab_results_fmridisplay([], 'compact');
+                    o2 = addblobs(o2, atlas2region(combined_atlas),'indexmap',cmap);
+                    if exist('atlasname_short','var')
+                        o2 = title_montage(o2, 5, ['resampled ' atlasname_short]);
+                    else
+                        o2 = title_montage(o2, 5, ['resampled ' atlasname_glm]);
+                    end
+                    set(gcf,'WindowState','maximized');
+                    drawnow,snapnow;
+
+                    clear o2
+                    
+                end
+                
             end
         end
         

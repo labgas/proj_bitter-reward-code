@@ -39,7 +39,7 @@ maskname_brain = which('brain_mask_fmriprep20_template_1000.nii');  % default us
 %% PREP_3A_RUN_SECOND_LEVEL_REGRESSION_AND_SAVE
 % -------------------------------------------------------------------------
 
-maskname_glm = which('gm_mask_canlab2023_coarse_fmriprep20_0_25.nii');  % default use of gray matter mask based on canlab 2023 atlas
+maskname_glm = which('gm_mask_canlab2023_coarse_fmriprep20_0_20.nii');  % default use of gray matter mask based on canlab 2023 atlas
                                                                         % model-specific maskdir defined in a_set_up_paths_always_run_first script
                                                                         % if you do not want to mask, change to []
                                                                         % if you want to use a custom mask, put it in maskdir and change name here
@@ -137,7 +137,7 @@ holdout_set_method_svm = 'onesample';                           % 'group', or 'o
                                                                         % subject (i.e. leave whole subject out)
 holdout_set_type_svm = 'kfold';                                 % 'kfold', 'leave_one_subject_out'      holdout set for cross-validation - the latter is not recommended
     nfolds_svm = 5;                                                 % default 5                             number of cross-validation folds for kfold
-maskname_svm = which('gm_mask_canlab2023_coarse_fmriprep20_0_25.nii');           % default use of gray matter mask based on canlab 2023 atlas
+maskname_svm = which('gm_mask_canlab2023_coarse_fmriprep20_0_20.nii');           % default use of gray matter mask based on canlab 2023 atlas
                                                                                     % model-specific maskdir defined in a_set_up_paths_always_run_first script
                                                                                     % if you do not want to mask, change to []
                                                                                     % if you want to use a custom mask, put it in maskdir and change name here
@@ -215,7 +215,7 @@ holdout_set_method_mvpa_reg_st = 'onesample';                   % 'group', or 'o
                                                                     % subject (i.e. leave whole subject out)
 nfolds_mvpa_reg_st = 5;                                         % default 5             number of cross-validation folds for kfold
 zscore_outcome_mvpa_reg_st = false;                             % default false         zscores behavioral outcome variable (fmri_dat.Y) prior to fitting models
-maskname_mvpa_reg_st = which('gm_mask_canlab2023_coarse_fmriprep20_0_25.nii');   % default use of gray matter mask based on canlab 2023 atlas
+maskname_mvpa_reg_st = which('gm_mask_canlab2023_coarse_fmriprep20_0_20.nii');   % default use of gray matter mask based on canlab 2023 atlas
 myscaling_mvpa_reg_st = 'raw';                                  % 'raw', 'centerimages', 'zscoreimages', 'l2normimages', 'zscorevoxels'
 
 % STATISTICS AND RESULTS VISUALIZATION OPTIONS
@@ -243,7 +243,7 @@ domultilevel_mvpa_reg_st = false;                               % default false;
 
 save_figures_pdm = false;                                       % default false                     true saves .svg files of all figures (slow, takes up space)
 zscore_outcome_pdm = false;                                     % default false                     zscores behavioral outcome variable (fmri_dat.Y) prior to fitting models
-maskname_pdm = which('gm_mask_canlab2023_coarse_fmriprep20_0_25.nii');           % default use of gray matter mask based on canlab 2023 atlas
+maskname_pdm = which('gm_mask_canlab2023_coarse_fmriprep20_0_20.nii');           % default use of gray matter mask based on canlab 2023 atlas
 myscaling_pdm = 'raw';                                          % 'raw', 'centerimages', 'zscoreimages', 'l2normimages', 'zscorevoxels'
 
 % STATISTICS AND RESULTS VISUALIZATION OPTIONS
