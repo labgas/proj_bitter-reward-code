@@ -1,4 +1,4 @@
-%% bit_rew_secondlevel_m1_s7a_c2a_second_level_parcreg.m
+%% bit_rew_secondlevel_m1m_s7c_c2a_second_lvl_parcreg_cond.m
 %
 %
 % *USAGE*
@@ -91,7 +91,7 @@
 
 % GET MODEL-SPECIFIC PATHS AND OPTIONS
 
-bit_rew_secondlevel_m1_s0_a_set_up_paths_always_run_first;
+bit_rew_secondlevel_m1m_s0_a_set_up_paths_always_run_first;
 
 % NOTES 
 %   1. CHANGE THIS TO THE MODEL-SPECIFIC VERSION OF THIS SCRIPT
@@ -102,7 +102,7 @@ bit_rew_secondlevel_m1_s0_a_set_up_paths_always_run_first;
 
 % Mandatory options from prep_3a script
 
-mygroupnamefield = 'contrasts'; 
+mygroupnamefield = 'conditions'; 
 results_suffix = 'no_cov'; % suffix of your choice added to .mat file with saved results
 
 % Options to copy if specified in prep_3a script

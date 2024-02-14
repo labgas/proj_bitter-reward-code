@@ -1,4 +1,4 @@
-%% bit_rew_secondlevel_m1_s7a_c2a_second_level_parcreg.m
+%% bit_rew_secondlevel_m1m_s7a_c2a_second_level_parcreg.m
 %
 %
 % *USAGE*
@@ -91,7 +91,7 @@
 
 % GET MODEL-SPECIFIC PATHS AND OPTIONS
 
-bit_rew_secondlevel_m1_s0_a_set_up_paths_always_run_first;
+bit_rew_secondlevel_m1m_s0_a_set_up_paths_always_run_first;
 
 % NOTES 
 %   1. CHANGE THIS TO THE MODEL-SPECIFIC VERSION OF THIS SCRIPT

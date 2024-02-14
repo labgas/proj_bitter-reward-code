@@ -1,4 +1,4 @@
-%% bit_rew_secondlevel_m1_s7a_c2a_second_level_parcreg.m
+%% bit_rew_secondlevel_m2m_s7_c2a_second_level_regression.m
 %
 %
 % *USAGE*
@@ -81,9 +81,9 @@
 %
 % -------------------------------------------------------------------------
 %
-% c2a_second_level_regression.m         v6.2
+% c2a_second_level_regression.m         v6.1
 %
-% last modified: 2024/02/12
+% last modified: 2023/11/21
 %
 %
 %% GET AND SET OPTIONS
@@ -91,7 +91,7 @@
 
 % GET MODEL-SPECIFIC PATHS AND OPTIONS
 
-bit_rew_secondlevel_m1_s0_a_set_up_paths_always_run_first;
+bit_rew_secondlevel_m2m_s0_a_set_up_paths_always_run_first;
 
 % NOTES 
 %   1. CHANGE THIS TO THE MODEL-SPECIFIC VERSION OF THIS SCRIPT
@@ -113,7 +113,7 @@ results_suffix = 'no_cov'; % suffix of your choice added to .mat file with saved
 % Custom options from prep_3a script
 
 % dorobust = true/false;
-dorobfit_parcelwise = true;
+% dorobfit_parcelwise = true;
 %   csf_wm_covs = true/false;
 %   remove_outliers = true/false;
 % atlasname_glm = 'atlas_name';
@@ -305,22 +305,7 @@ else
 end
 
 
-% LOAD BRAINMASK
-
 brainmask = fmri_mask_image(maskname_brain,'noverbose');
-
-
-% CHECK Q THRESHOLD IN CASE OF PARCELWISE ANALYSIS
-
-if dorobfit_parcelwise
-    
-    if q_threshold_glm ~= 0.05
-        fprintf('\n');
-        warning('Parcelwise analysis only implemented with qFDR < 0.05, will default to this threshold')
-        fprintf('\n');
-    end
-    
-end
 
 
 %% LOAD RESULTS IF NEEDED
@@ -513,24 +498,7 @@ for c = 1:size(results, 2) % number of contrasts or conditions
 
             tj = get_wh_image(t, j);
                     
-                if ~dorobfit_parcelwise
-                    
-                    tj = threshold(tj, q_threshold_glm, 'fdr', 'k', k_threshold_glm); 
-                    
-%                 else
-%                     
-%                     if q_threshold_glm ~= .05 % already thresholded at q < 0.05
-%                         
-%                         tj = threshold(tj, q_threshold_glm, 'fdr', 'k', k_threshold_glm); 
-%                         
-%                     end
-%
-%                   NOTE: commented this out because it would apply a
-%                           voxel- rather than parcel-level FDR correction
-%                           on the statistic_image object, which we don't
-%                           want!
-                        
-                end
+            tj = threshold(tj, q_threshold_glm, 'fdr', 'k', k_threshold_glm); 
 
             datsig = tj.dat(logical(tj.sig));
             datsigneg = datsig(datsig<0);
@@ -579,24 +547,7 @@ for c = 1:size(results, 2) % number of contrasts or conditions
 
             tj = get_wh_image(t, j);
                     
-                if ~dorobfit_parcelwise
-                    
-                    tj = threshold(tj, q_threshold_glm, 'fdr', 'k', k_threshold_glm); 
-                    
-%                 else
-%                     
-%                     if q_threshold_glm ~= .05 % already thresholded at q < 0.05
-%                         
-%                         tj = threshold(tj, q_threshold_glm, 'fdr', 'k', k_threshold_glm); 
-%                         
-%                     end
-%
-%                   NOTE: commented this out because it would apply a
-%                           voxel- rather than parcel-level FDR correction
-%                           on the statistic_image object, which we don't
-%                           want!
-                        
-                end
+            tj = threshold(tj, q_threshold_glm, 'fdr', 'k', k_threshold_glm); 
 
             r = region(tj, 'noverbose');
             r(cat(1, r.numVox) < k_threshold_glm) = [];
